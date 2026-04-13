@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d0d14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CaptionClash">
+<meta name="description" content="The caption contest arena — submit images, write captions, vote for the best.">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>CaptionClash ⚡</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --bg:        #0d0d14;
+  --surface:   #14141f;
+  --surface2:  #1c1c2e;
+  --surface3:  #242438;
+  --border:    #2a2a42;
+  --border2:   #353555;
+  --accent:    #e8ff47;
+  --accent-dim:rgba(232,255,71,.12);
+  --accent2:   #ff5277;
+  --accent3:   #47ffca;
+  --blue:      #6ea8ff;
+  --blue-dim:  rgba(110,168,255,.12);
+  --text:      #eeeef5;
+  --text2:     #8888aa;
+  --text3:     #55556a;
+  --gold:      #ffc940;
+  --silver:    #c8c8e0;
+  --bronze:    #d4804a;
+  --r:         14px;
+  --r-lg:      22px;
+  --r-xl:      28px;
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ═══════════════════════════════════════════════
+   RESET + BASE
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* Subtle noise overlay */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+#app { position: relative; z-index: 1; }
+
+/* ═══════════════════════════════════════════════
+   TYPOGRAPHY
+═══════════════════════════════════════════════ */
+.syne { font-family: 'Syne', sans-serif; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ═══════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════ */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(var(--safe-top) + 14px) 20px 14px;
+  background: rgba(13,13,20,.92);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 200;
+}
+.logo {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 1.4rem; letter-spacing: -0.5px;
+  color: var(--accent); text-decoration: none; line-height: 1;
+}
+.logo em { color: var(--accent2); font-style: normal; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 5px 12px 5px 5px; cursor: pointer;
+  transition: border-color .2s;
+}
+.user-chip:hover { border-color: var(--border2); }
+.avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: .7rem;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   BOTTOM NAV (mobile-first)
+═══════════════════════════════════════════════ */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: rgba(13,13,20,.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
+}
+.bnav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 10px 0 8px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); font-family: 'Instrument Sans', sans-serif;
+  font-size: .65rem; font-weight: 600; letter-spacing: .3px;
+  text-transform: uppercase; transition: color .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.bnav-btn .icon { font-size: 1.3rem; transition: transform .2s; }
+.bnav-btn.active { color: var(--accent); }
+.bnav-btn.active .icon { transform: scale(1.15); }
+.bnav-btn#bnav-admin { display: none; }
+
+/* ═══════════════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════════════ */
+.main {
+  padding: 20px 16px;
+  padding-bottom: calc(80px + var(--safe-bottom));
+  max-width: 680px; margin: 0 auto;
+}
+.page { display: none; }
+.page.active { display: block; animation: fadeUp .25s ease; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 1rem; margin-bottom: 14px; color: var(--text);
+}
+
+/* ═══════════════════════════════════════════════
+   FORMS
+═══════════════════════════════════════════════ */
+.form-group { margin-bottom: 16px; }
+.form-group:last-child { margin-bottom: 0; }
+label {
+  display: block; font-size: .72rem; font-weight: 600;
+  letter-spacing: .6px; text-transform: uppercase;
+  color: var(--text2); margin-bottom: 6px;
+}
+input, textarea, select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 13px 14px;
+  color: var(--text);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 1rem; /* prevent iOS zoom */
+  transition: border-color .2s, box-shadow .2s;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+textarea { resize: vertical; min-height: 88px; line-height: 1.5; }
+
+/* ═══════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 14px 22px; border-radius: var(--r);
+  border: none; cursor: pointer;
+  font-family: 'Instrument Sans', sans-serif;
+  font-weight: 600; font-size: .95rem;
+  transition: all .18s; text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  min-height: 48px; /* WCAG touch target */
+}
+.btn-primary { background: var(--accent); color: #0a0a10; }
+.btn-primary:active { background: #d4ea30; transform: scale(.97); }
+.btn-danger  { background: var(--accent2); color: #fff; }
+.btn-danger:active  { background: #e03060; transform: scale(.97); }
+.btn-ghost   { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:active   { background: var(--surface3); }
+.btn-sm { padding: 10px 16px; font-size: .85rem; min-height: 40px; }
+.btn-full { width: 100%; }
+.btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
+
+/* ═══════════════════════════════════════════════
+   BADGES
+═══════════════════════════════════════════════ */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 999px;
+  font-size: .72rem; font-weight: 600; letter-spacing: .3px;
+  white-space: nowrap;
+}
+.badge-green  { background: rgba(71,255,202,.12); color: var(--accent3); border: 1px solid rgba(71,255,202,.25); }
+.badge-blue   { background: var(--blue-dim);       color: var(--blue);   border: 1px solid rgba(110,168,255,.25); }
+.badge-yellow { background: var(--accent-dim);     color: var(--accent); border: 1px solid rgba(232,255,71,.25); }
+.badge-red    { background: rgba(255,82,119,.12);  color: var(--accent2);border: 1px solid rgba(255,82,119,.25); }
+.badge-gray   { background: var(--surface2);       color: var(--text2);  border: 1px solid var(--border); }
+
+/* ═══════════════════════════════════════════════
+   AUTH PAGE
+═══════════════════════════════════════════════ */
+#auth-page {
+  min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px 16px;
+}
+.auth-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 32px 24px;
+  width: 100%; max-width: 400px;
+}
+.auth-logo {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 2.2rem; color: var(--accent);
+  margin-bottom: 4px; line-height: 1;
+}
+.auth-logo em { color: var(--accent2); font-style: normal; }
+.auth-sub { color: var(--text2); margin-bottom: 28px; font-size: .95rem; }
+.auth-switch { text-align: center; margin-top: 20px; color: var(--text2); font-size: .88rem; }
+.auth-switch a { color: var(--accent); text-decoration: none; cursor: pointer; font-weight: 600; }
+.pin-input {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 1.4rem !important;
+  letter-spacing: 8px;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════════════ */
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.section-head h2 {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 1.5rem; letter-spacing: -.3px;
+}
+
+/* ═══════════════════════════════════════════════
+   CONTEST CARD
+═══════════════════════════════════════════════ */
+.contest-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden; margin-bottom: 20px;
+}
+.contest-img-wrap {
+  position: relative; background: var(--surface2);
+  min-height: 180px; display: flex; align-items: center; justify-content: center;
+}
+.contest-img {
+  width: 100%; max-height: 340px;
+  object-fit: cover; display: block;
+}
+.contest-body { padding: 16px 18px 20px; }
+.contest-meta { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.contest-title-text {
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 1.15rem; flex: 1; min-width: 0; line-height: 1.25;
+}
+
+/* TIMELINE */
+.timeline-bar {
+  display: flex; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--border); margin-bottom: 14px;
+}
+.tl-seg {
+  flex: 1; padding: 7px 8px; text-align: center;
+  font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+  color: var(--text3); background: var(--surface2);
+  border-right: 1px solid var(--border); line-height: 1.3;
+}
+.tl-seg:last-child { border-right: none; }
+.tl-active  { background: var(--accent-dim); color: var(--accent); font-weight: 700; }
+.tl-vote    { background: var(--blue-dim);   color: var(--blue);   font-weight: 700; }
+.tl-done    { opacity: .45; }
+.tl-result  { background: rgba(255,82,119,.1); color: var(--accent2); font-weight: 700; }
+
+/* COUNTDOWN */
+.countdown {
+  font-family: 'JetBrains Mono', monospace; font-size: .75rem;
+  color: var(--text2); white-space: nowrap;
+}
+.countdown.urgent { color: var(--accent2); }
+
+/* ═══════════════════════════════════════════════
+   CAPTIONS
+═══════════════════════════════════════════════ */
+.caption-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.caption-entry {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 13px 14px;
+  display: flex; align-items: flex-start; gap: 12px;
+  transition: border-color .2s;
+}
+.caption-entry.winner-1 { border-color: var(--gold);   background: rgba(255,201,64,.07); }
+.caption-entry.winner-2 { border-color: var(--silver); background: rgba(200,200,224,.05); }
+.caption-entry.winner-3 { border-color: var(--bronze); background: rgba(212,128,74,.06); }
+
+.caption-vote-btn {
+  min-width: 48px; min-height: 52px;
+  background: var(--surface3); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text2); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  font-family: 'JetBrains Mono', monospace; font-size: .78rem; font-weight: 600;
+  transition: all .18s; flex-shrink: 0; gap: 1px;
+  touch-action: manipulation;
+}
+.caption-vote-btn:active:not(:disabled) { transform: scale(.93); }
+.caption-vote-btn.votable:active { border-color: var(--accent); color: var(--accent); }
+.caption-vote-btn.voted { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.caption-vote-btn:disabled { opacity: .35; cursor: not-allowed; }
+.caption-text { font-size: .95rem; line-height: 1.55; flex: 1; }
+.caption-anon { font-size: .72rem; color: var(--text3); margin-top: 4px; font-style: italic; }
+.vote-medal {
+  min-width: 48px; text-align: center;
+  font-size: 1.4rem; line-height: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0;
+}
+.vote-medal span { font-family: 'JetBrains Mono', monospace; font-size: .68rem; color: var(--text2); }
+
+.caption-submit-form {
+  background: var(--surface2); border: 1px dashed var(--border);
+  border-radius: var(--r); padding: 14px; margin-top: 12px;
+}
+.anon-notice {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--blue-dim); border: 1px solid rgba(110,168,255,.2);
+  border-radius: 10px; padding: 10px 13px;
+  font-size: .82rem; color: var(--blue); margin-bottom: 12px;
+}
+
+/* ═══════════════════════════════════════════════
+   RESULT OVERLAY
+═══════════════════════════════════════════════ */
+.result-overlay { position: relative; display: block; width: 100%; }
+.result-caption-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,.92));
+  padding: 36px 18px 18px; text-align: center;
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 1.05rem; color: #fff; letter-spacing: .2px; line-height: 1.35;
+}
+
+/* ═══════════════════════════════════════════════
+   LEADERBOARD
+═══════════════════════════════════════════════ */
+.lb-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  transition: background .15s;
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row:active { background: var(--surface2); }
+.lb-rank { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; min-width: 34px; text-align: center; }
+.lb-rank.r1 { color: var(--gold); } .lb-rank.r2 { color: var(--silver); } .lb-rank.r3 { color: var(--bronze); }
+.lb-handle { font-weight: 600; flex: 1; font-size: .95rem; }
+.lb-sub { font-size: .75rem; color: var(--text2); }
+.lb-pts { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 600; color: var(--accent); }
+
+/* ═══════════════════════════════════════════════
+   URL INPUT (no file upload — URL only)
+═══════════════════════════════════════════════ */
+.img-url-preview {
+  width: 100%; max-height: 220px; object-fit: cover;
+  border-radius: var(--r); margin-top: 10px;
+  display: none; border: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════
+   TIMING CHIPS
+═══════════════════════════════════════════════ */
+.timing-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.timing-chip {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 13px;
+  font-family: 'JetBrains Mono', monospace; font-size: .75rem; color: var(--text2);
+}
+.timing-chip strong { color: var(--accent); display: block; font-size: .95rem; margin-bottom: 1px; }
+
+/* ═══════════════════════════════════════════════
+   ADMIN
+═══════════════════════════════════════════════ */
+.admin-banner {
+  background: linear-gradient(135deg, rgba(255,82,119,.1), rgba(232,255,71,.06));
+  border: 1px solid rgba(255,82,119,.25); border-radius: var(--r);
+  padding: 11px 14px; margin-bottom: 16px;
+  font-size: .85rem; color: var(--text2);
+  display: flex; align-items: center; gap: 8px;
+}
+.cfg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(min-width:520px) { .cfg-grid { grid-template-columns: 1fr 1fr 1fr; } }
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: calc(72px + var(--safe-bottom) + 12px); left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--surface3); border: 1px solid var(--border2);
+  color: var(--text); padding: 12px 20px; border-radius: 999px;
+  font-size: .88rem; font-weight: 500; z-index: 9999;
+  opacity: 0; transition: opacity .25s, transform .25s;
+  pointer-events: none; box-shadow: 0 8px 32px rgba(0,0,0,.6);
+  white-space: nowrap; max-width: calc(100vw - 32px);
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ═══════════════════════════════════════════════
+   LOADING OVERLAY
+═══════════════════════════════════════════════ */
+#loading {
+  position: fixed; inset: 0; z-index: 9998;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 14px;
+  transition: opacity .4s;
+}
+#loading.hidden { opacity: 0; pointer-events: none; }
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════════ */
+.empty { text-align: center; padding: 48px 16px; color: var(--text2); }
+.empty-icon { font-size: 2.8rem; margin-bottom: 12px; }
+.empty p { font-size: .92rem; line-height: 1.5; }
+.tag {
+  font-family: 'JetBrains Mono', monospace; font-size: .68rem;
+  background: var(--surface2); padding: 2px 7px; border-radius: 5px; color: var(--text2);
+}
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.config-note {
+  background: rgba(232,255,71,.06); border: 1px solid rgba(232,255,71,.18);
+  border-radius: var(--r); padding: 12px 14px;
+  font-size: .82rem; color: var(--text2); margin-bottom: 16px; line-height: 1.5;
+}
+.config-note code {
+  font-family: 'JetBrains Mono', monospace; font-size: .8rem;
+  color: var(--accent); background: var(--accent-dim);
+  padding: 1px 6px; border-radius: 4px;
+}
+
+/* Desktop tweaks */
+@media(min-width: 680px) {
+  .header { padding: calc(var(--safe-top) + 16px) 32px 16px; }
+  .bottom-nav { display: none; }
+  .main { padding: 28px 24px 40px; }
+  /* Show top nav instead */
+  .top-nav { display: flex !important; }
+}
+
+/* Top nav (desktop only) */
+.top-nav {
+  display: none;
+  gap: 2px; padding: 0 32px;
+  background: rgba(13,13,20,.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+.top-nav-btn {
+  padding: 12px 18px; border: none; background: none;
+  color: var(--text2); font-family: 'Instrument Sans', sans-serif;
+  font-size: .88rem; font-weight: 600; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: all .2s; white-space: nowrap;
+}
+.top-nav-btn:hover { color: var(--text); }
+.top-nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+#top-admin-btn { display: none; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.8rem;color:var(--accent)">Caption<em style="color:var(--accent2);font-style:normal">Clash</em></div>
+  <div class="spinner"></div>
+</div>
+
+<div id="app" style="display:none">
+
+  <!-- AUTH PAGE -->
+  <div id="auth-page" style="display:none">
+    <div class="auth-box">
+      <div class="auth-logo">Caption<em>Clash</em> ⚡</div>
+      <div class="auth-sub" id="auth-sub">Sign in to enter the arena</div>
+      <div id="login-form">
+        <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="you@example.com" autocomplete="email"></div>
+        <div class="form-group"><label>PIN</label><input type="password" id="login-pin" class="pin-input" maxlength="4" placeholder="••••" inputmode="numeric" autocomplete="current-password"></div>
+        <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In →</button>
+        <div class="auth-switch">No account? <a onclick="toggleAuth('register')">Register here</a></div>
+      </div>
+      <div id="register-form" style="display:none">
+        <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email"></div>
+        <div class="form-group"><label>Your Handle</label><input type="text" id="reg-handle" placeholder="wittyuser" maxlength="20" autocomplete="username"></div>
+        <div class="form-group"><label>4-Digit PIN</label><input type="password" id="reg-pin" class="pin-input" maxlength="4" placeholder="••••" inputmode="numeric" autocomplete="new-password"></div>
+        <div class="form-group"><label>Admin Password <span style="text-transform:none;font-weight:400">(optional)</span></label><input type="password" id="reg-admin" placeholder="Leave blank if not admin"></div>
+        <button class="btn btn-primary btn-full" onclick="doRegister()">Create Account →</button>
+        <div class="auth-switch">Have an account? <a onclick="toggleAuth('login')">Sign in</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="main-app" style="display:none">
+    <header class="header">
+      <a class="logo" href="#">Caption<em>Clash</em> ⚡</a>
+      <div class="header-right">
+        <div class="user-chip" onclick="doLogout()">
+          <div class="avatar" id="user-avatar">?</div>
+          <span id="user-handle-display" style="font-size:.85rem;font-weight:600;"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Desktop top nav -->
+    <nav class="top-nav">
+      <button class="top-nav-btn active" onclick="showPage('contests')" data-tab="contests">🖼 Contests</button>
+      <button class="top-nav-btn" onclick="showPage('submit')" data-tab="submit">+ Submit</button>
+      <button class="top-nav-btn" onclick="showPage('leaderboard')" data-tab="leaderboard">🏆 Leaderboard</button>
+      <button class="top-nav-btn" id="top-admin-btn" onclick="showPage('admin')" data-tab="admin">⚙️ Admin</button>
+    </nav>
+
+    <div class="main">
+
+      <!-- CONTESTS -->
+      <div class="page active" id="page-contests">
+        <div class="section-head">
+          <h2>Contests</h2>
+          <button class="btn btn-ghost btn-sm" onclick="renderContests()">↻ Refresh</button>
+        </div>
+        <div id="contests-list"><div class="empty"><div class="spinner" style="margin:0 auto"></div></div></div>
+      </div>
+
+      <!-- SUBMIT -->
+      <div class="page" id="page-submit">
+        <div class="section-head"><h2>Submit Image</h2></div>
+        <div id="submit-timing-notice"></div>
+        <div class="card">
+          <div class="form-group"><label>Contest Title</label><input type="text" id="si-title" placeholder="Give this round a name"></div>
+          <div class="form-group">
+            <label>Image URL</label>
+            <input type="url" id="si-url" placeholder="https://i.imgur.com/abc123.jpg" oninput="previewUrl()" autocomplete="off">
+            <img id="url-preview" class="img-url-preview" alt="preview">
+            <div style="font-size:.75rem;color:var(--text2);margin-top:8px;">
+              💡 Use a public image host: <strong>Imgur</strong>, <strong>Cloudinary</strong>, or paste any public image URL. Images must be accessible to all users.
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitImage()" id="submit-btn">Submit to Contest →</button>
+        </div>
+      </div>
+
+      <!-- LEADERBOARD -->
+      <div class="page" id="page-leaderboard">
+        <div class="section-head"><h2>Leaderboard 🏆</h2></div>
+        <div class="card" style="padding:0;overflow:hidden"><div id="leaderboard-list"></div></div>
+      </div>
+
+      <!-- ADMIN -->
+      <div class="page" id="page-admin">
+        <div class="section-head"><h2>Admin ⚙️</h2></div>
+        <div class="admin-banner">🔐 Admin mode — you control all contest timing.</div>
+
+        <div class="card">
+          <div class="card-title">⏱ Global Contest Timing</div>
+          <div class="config-note">
+            These windows apply to <strong>every image</strong> from the moment it's submitted.
+            Changes take effect for <em>new</em> contests only — existing contests use the timing that was active when they were created. Store your Supabase keys in <code>supabase-config.js</code>.
+          </div>
+          <div class="cfg-grid">
+            <div class="form-group" style="margin-bottom:0">
+              <label>Caption Window (hrs)</label>
+              <input type="number" id="cfg-caption" min="0.5" max="720" step="0.5">
+              <div style="font-size:.72rem;color:var(--text2);margin-top:4px;">How long captions are accepted</div>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Voting Window (hrs)</label>
+              <input type="number" id="cfg-vote" min="0.5" max="720" step="0.5">
+              <div style="font-size:.72rem;color:var(--text2);margin-top:4px;">How long voting stays open</div>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Auto-Finalize</label>
+              <select id="cfg-auto">
+                <option value="0">No — manual reveal</option>
+                <option value="1">Yes — auto-reveal</option>
+              </select>
+              <div style="font-size:.72rem;color:var(--text2);margin-top:4px;">Auto-reveal after voting ends</div>
+            </div>
+          </div>
+          <div style="margin-top:16px;"><button class="btn btn-primary" onclick="saveAdminConfig()">Save Settings ✓</button></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">All Contests</div>
+          <div id="admin-contests-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Registered Users</div>
+          <div id="admin-users-list"></div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+
+    <!-- BOTTOM NAV (mobile) -->
+    <nav class="bottom-nav">
+      <button class="bnav-btn active" onclick="showPage('contests')" data-bnav="contests">
+        <span class="icon">🖼</span>Contests
+      </button>
+      <button class="bnav-btn" onclick="showPage('submit')" data-bnav="submit">
+        <span class="icon">➕</span>Submit
+      </button>
+      <button class="bnav-btn" onclick="showPage('leaderboard')" data-bnav="leaderboard">
+        <span class="icon">🏆</span>Scores
+      </button>
+      <button class="bnav-btn" id="bnav-admin" onclick="showPage('admin')" data-bnav="admin">
+        <span class="icon">⚙️</span>Admin
+      </button>
+    </nav>
+
+  </div><!-- /main-app -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════
+  SUPABASE CONFIG — edit supabase-config.js
+════════════════════════════════════════════ -->
+<script src="supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ════════════════════════════════════════════
+//  SUPABASE CLIENT
+// ════════════════════════════════════════════
+let sb;
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch(e) {
+  console.error('Supabase config missing. See supabase-config.js');
+}
+
+// ════════════════════════════════════════════
+//  LOCAL CONFIG (admin timing prefs)
+//  Stored in Supabase `config` table, cached locally
+// ════════════════════════════════════════════
+const ADMIN_PASS = window.ADMIN_PASSWORD || "caption2024";
+
+let cfg = { captionHrs: 48, voteHrs: 24, autoFinalize: false };
+let currentUser = null; // { email, handle, isAdmin }
+
+// ════════════════════════════════════════════
+//  PHASE HELPER
+// ════════════════════════════════════════════
+function getPhase(contest, now) {
+  // Use the timing that was snapshotted when the contest was created
+  const captionMs  = (contest.caption_hrs ?? cfg.captionHrs) * 3600000;
+  const voteMs     = (contest.vote_hrs    ?? cfg.voteHrs)    * 3600000;
+  const created    = new Date(contest.created_at).getTime();
+  const captionEnd = created + captionMs;
+  const voteEnd    = captionEnd + voteMs;
+  if (contest.finalized)    return { phase:'revealed', captionEnd, voteEnd };
+  if (now < captionEnd)     return { phase:'caption',  captionEnd, voteEnd, msLeft: captionEnd - now };
+  if (now < voteEnd)        return { phase:'voting',   captionEnd, voteEnd, msLeft: voteEnd - now };
+  return                           { phase:'closed',   captionEnd, voteEnd };
+}
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+async function init() {
+  // Load cached session
+  const saved = localStorage.getItem('cc_user');
+  if (saved) {
+    try { currentUser = JSON.parse(saved); } catch {}
+  }
+
+  // Load config from Supabase
+  await loadConfig();
+
+  hideLoading();
+
+  if (currentUser) {
+    showApp();
+  } else {
+    showAuthPage();
+  }
+}
+
+function hideLoading() {
+  const el = document.getElementById('loading');
+  el.classList.add('hidden');
+  setTimeout(() => el.style.display='none', 500);
+}
+
+function showAuthPage() {
+  document.getElementById('app').style.display = '';
+  document.getElementById('auth-page').style.display = '';
+  document.getElementById('main-app').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('app').style.display = '';
+  document.getElementById('auth-page').style.display = 'none';
+  document.getElementById('main-app').style.display = '';
+  document.getElementById('user-handle-display').textContent = currentUser.handle;
+  document.getElementById('user-avatar').textContent = currentUser.handle[0].toUpperCase();
+  if (currentUser.isAdmin) {
+    document.getElementById('bnav-admin').style.display = '';
+    document.getElementById('top-admin-btn').style.display = '';
+  }
+  showPage('contests');
+}
+
+// ════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════
+function toggleAuth(mode) {
+  const showLogin = mode === 'login';
+  document.getElementById('login-form').style.display    = showLogin ? '' : 'none';
+  document.getElementById('register-form').style.display = showLogin ? 'none' : '';
+  document.getElementById('auth-sub').textContent = showLogin
+    ? 'Sign in to enter the arena' : 'Create your account 🎭';
+}
+
+async function doLogin() {
+  const email = v('login-email').trim().toLowerCase();
+  const pin   = v('login-pin').trim();
+  if (!email||!pin) return toast('Enter your email and PIN');
+  try {
+    const { data, error } = await sb.from('users')
+      .select('email,handle,pin,is_admin')
+      .eq('email', email).single();
+    if (error || !data) return toast('No account found — register first');
+    if (data.pin !== pin) return toast('Wrong PIN');
+    currentUser = { email: data.email, handle: data.handle, isAdmin: data.is_admin };
+    localStorage.setItem('cc_user', JSON.stringify(currentUser));
+    showApp();
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+async function doRegister() {
+  const email  = v('reg-email').trim().toLowerCase();
+  const handle = v('reg-handle').trim();
+  const pin    = v('reg-pin').trim();
+  const ap     = v('reg-admin').trim();
+  if (!email||!handle||!pin) return toast('Fill in all fields');
+  if (!/^\d{4}$/.test(pin))  return toast('PIN must be exactly 4 digits');
+  if (!/^[a-zA-Z0-9_]+$/.test(handle)) return toast('Handle: letters, numbers, _ only');
+  const isAdmin = ap === ADMIN_PASS;
+  try {
+    const { error } = await sb.from('users').insert({
+      email, handle, pin, is_admin: isAdmin
+    });
+    if (error) {
+      if (error.code === '23505') return toast('Email or handle already taken');
+      return toast('Error: ' + error.message);
+    }
+    currentUser = { email, handle, isAdmin };
+    localStorage.setItem('cc_user', JSON.stringify(currentUser));
+    toast(isAdmin ? 'Welcome, admin! 🎉' : 'Account created! ⚡');
+    showApp();
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('cc_user');
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('auth-page').style.display = '';
+  toggleAuth('login');
+}
+
+// ════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn, .top-nav-btn').forEach(b => b.classList.remove('active'));
+  const pg = document.getElementById('page-'+id);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll(`[data-bnav="${id}"], [data-tab="${id}"]`)
+    .forEach(b => b.classList.add('active'));
+  if (id==='contests')    renderContests();
+  if (id==='leaderboard') renderLeaderboard();
+  if (id==='admin')       renderAdmin();
+  if (id==='submit')      renderSubmitNotice();
+  window.scrollTo(0,0);
+}
+
+// ════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════
+async function loadConfig() {
+  try {
+    const { data } = await sb.from('config').select('*').eq('id', 1).single();
+    if (data) cfg = { captionHrs: data.caption_hrs, voteHrs: data.vote_hrs, autoFinalize: data.auto_finalize };
+  } catch {}
+}
+
+async function saveAdminConfig() {
+  const ch = parseFloat(v('cfg-caption'));
+  const vh = parseFloat(v('cfg-vote'));
+  const af = document.getElementById('cfg-auto').value === '1';
+  if (isNaN(ch)||ch<=0) return toast('Enter a valid caption window');
+  if (isNaN(vh)||vh<=0) return toast('Enter a valid voting window');
+  cfg = { captionHrs:ch, voteHrs:vh, autoFinalize:af };
+  try {
+    await sb.from('config').upsert({ id:1, caption_hrs:ch, vote_hrs:vh, auto_finalize:af });
+    toast('Timing settings saved ✅');
+    renderAdmin();
+  } catch(e) { toast('Error: '+e.message); }
+}
+
+function loadCfgIntoForm() {
+  document.getElementById('cfg-caption').value = cfg.captionHrs;
+  document.getElementById('cfg-vote').value    = cfg.voteHrs;
+  document.getElementById('cfg-auto').value    = cfg.autoFinalize ? '1' : '0';
+}
+
+// ════════════════════════════════════════════
+//  SUBMIT IMAGE (URL only — shared across all devices)
+// ════════════════════════════════════════════
+function renderSubmitNotice() {
+  document.getElementById('submit-timing-notice').innerHTML = `
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-title" style="margin-bottom:10px;">📋 Active Timing</div>
+      <div class="timing-row">
+        <div class="timing-chip"><strong>${cfg.captionHrs}h</strong>Caption window</div>
+        <div class="timing-chip"><strong>${cfg.voteHrs}h</strong>Voting window</div>
+        <div class="timing-chip"><strong>${cfg.autoFinalize?'Auto':'Manual'}</strong>Finalize</div>
+      </div>
+    </div>`;
+}
+
+function previewUrl() {
+  const url = v('si-url').trim();
+  const prev = document.getElementById('url-preview');
+  if (url) { prev.src = url; prev.style.display='block'; }
+  else prev.style.display='none';
+}
+
+async function submitImage() {
+  const title = v('si-title').trim();
+  const url   = v('si-url').trim();
+  if (!title) return toast('Give this contest a title');
+  if (!url)   return toast('Enter an image URL');
+  if (!url.match(/^https?:\/\/.+/)) return toast('Enter a valid https:// URL');
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  try {
+    const { error } = await sb.from('contests').insert({
+      title, img_url: url,
+      submitted_by: currentUser.email,
+      caption_hrs: cfg.captionHrs,
+      vote_hrs: cfg.voteHrs,
+      finalized: false
+    });
+    if (error) { toast('Error: '+error.message); return; }
+    document.getElementById('si-title').value = '';
+    document.getElementById('si-url').value   = '';
+    document.getElementById('url-preview').style.display = 'none';
+    toast('Image submitted! The clock starts now 🎭');
+    showPage('contests');
+  } catch(e) { toast('Error: '+e.message); }
+  finally { btn.disabled=false; btn.textContent='Submit to Contest →'; }
+}
+
+// ════════════════════════════════════════════
+//  RENDER CONTESTS
+// ════════════════════════════════════════════
+async function renderContests() {
+  const el = document.getElementById('contests-list');
+  el.innerHTML = `<div class="empty"><div class="spinner" style="margin:0 auto 12px"></div><p>Loading contests…</p></div>`;
+  try {
+    const { data: contests, error } = await sb.from('contests')
+      .select('*, captions(id, email, title, text, created_at)')
+      .order('created_at', { ascending: false });
+    if (error) { el.innerHTML=`<div class="empty"><p>Error loading contests.</p></div>`; return; }
+
+    // Load votes for current user
+    const { data: myVotes } = await sb.from('votes')
+      .select('contest_id, caption_id').eq('voter_email', currentUser.email);
+    const myVoteMap = {};
+    (myVotes||[]).forEach(v => myVoteMap[v.contest_id] = v.caption_id);
+
+    // Load all vote counts
+    const { data: allVotes } = await sb.from('votes').select('caption_id, contest_id');
+    const voteCounts = {};
+    (allVotes||[]).forEach(v => { voteCounts[v.caption_id] = (voteCounts[v.caption_id]||0)+1; });
+
+    // Auto-finalize if needed
+    const now = Date.now();
+    const toFinalize = (contests||[]).filter(c => {
+      if (c.finalized || !cfg.autoFinalize) return false;
+      return getPhase(c, now).phase === 'closed';
+    });
+    for (const c of toFinalize) { await doFinalize(c, voteCounts); }
+
+    if (!contests?.length) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">🎭</div><p>No contests yet — submit an image to start!</p></div>`;
+      return;
+    }
+
+    const phaseOrder = { caption:0, voting:1, closed:2, revealed:3 };
+    const sorted = [...contests].sort((a,b) => {
+      const pa = getPhase(a,now).phase, pb = getPhase(b,now).phase;
+      return phaseOrder[pa]!==phaseOrder[pb] ? phaseOrder[pa]-phaseOrder[pb] : new Date(b.created_at)-new Date(a.created_at);
+    });
+
+    el.innerHTML = sorted.map(c => buildContestCard(c, now, myVoteMap, voteCounts)).join('');
+  } catch(e) { el.innerHTML=`<div class="empty"><p>Error: ${esc(e.message)}</p></div>`; }
+}
+
+function buildContestCard(c, now, myVoteMap, voteCounts) {
+  const { phase, captionEnd, voteEnd, msLeft } = getPhase(c, now);
+  const badges = {
+    caption: `<span class="badge badge-green">✏️ Open</span>`,
+    voting:  `<span class="badge badge-blue">🗳 Voting</span>`,
+    closed:  `<span class="badge badge-yellow">⌛ Pending</span>`,
+    revealed:`<span class="badge badge-gray">✅ Done</span>`
+  };
+  let cdHtml = '';
+  if (phase==='caption' && msLeft!=null)
+    cdHtml = `<span class="countdown ${msLeft<3600000?'urgent':''}">⏱ ${fmtMs(msLeft)}</span>`;
+  else if (phase==='voting' && msLeft!=null)
+    cdHtml = `<span class="countdown ${msLeft<3600000?'urgent':''}" style="${msLeft>=3600000?'color:var(--blue)':''}">🗳 ${fmtMs(msLeft)}</span>`;
+
+  const tlCaption  = phase==='caption' ? 'tl-active' : 'tl-done';
+  const tlVoting   = phase==='voting'  ? 'tl-vote'   : (phase==='caption' ? '' : 'tl-done');
+  const tlResults  = phase==='revealed'? 'tl-result'  : (phase==='closed' ? 'tl-active' : '');
+  const timelineHtml = `
+    <div class="timeline-bar">
+      <div class="tl-seg ${tlCaption}">✏️ ${c.caption_hrs??cfg.captionHrs}h</div>
+      <div class="tl-seg ${tlVoting}">🗳 ${c.vote_hrs??cfg.voteHrs}h</div>
+      <div class="tl-seg ${tlResults}">🏁 Results</div>
+    </div>`;
+
+  const captions   = c.captions || [];
+  const myVote     = myVoteMap[c.id];
+  const myCaption  = captions.find(x => x.email===currentUser.email);
+  const isAdmin    = currentUser.isAdmin;
+
+  let captionsHtml = '';
+  if (phase==='revealed') {
+    const top3 = [...captions].sort((a,b)=>(voteCounts[b.id]||0)-(voteCounts[a.id]||0))
+      .filter((cap,i)=>i<3 && (voteCounts[cap.id]||0)>0);
+    if (!top3.length) {
+      captionsHtml = `<div style="color:var(--text2);font-size:.88rem;padding:8px 0;">No votes cast — no winners.</div>`;
+    } else {
+      const medals=['🥇','🥈','🥉'], wc=['winner-1','winner-2','winner-3'];
+      captionsHtml = `<div class="caption-list">`+top3.map((cap,i)=>{
+        const vc = voteCounts[cap.id]||0;
+        const isMe = cap.email===currentUser.email ? `<span class="tag" style="margin-left:5px">you</span>` : '';
+        return `<div class="caption-entry ${wc[i]}">
+          <div class="vote-medal">${medals[i]}<span>${vc}v</span></div>
+          <div style="flex:1">
+            <div class="caption-text">${esc(cap.title?`"${cap.title}" — `:'')}${esc(cap.text)}${isMe}</div>
+            <div class="caption-anon">Anonymous caption</div>
+          </div>
+        </div>`;
+      }).join('')+`</div>`;
+    }
+  } else if (phase==='voting') {
+    const shuffled = shuffle([...captions]);
+    captionsHtml = `<div class="anon-notice">🎭 Captions are anonymous — vote for your favorite!</div>`
+      + (shuffled.length ? `<div class="caption-list">`+shuffled.map(cap => {
+        const isMe  = cap.email===currentUser.email;
+        const voted = myVote===cap.id;
+        let leftEl;
+        if (isMe)        leftEl=`<button class="caption-vote-btn" disabled>✍️</button>`;
+        else if (myVote) leftEl=`<button class="caption-vote-btn ${voted?'voted':''}" disabled>${voted?'✓':'▲'}</button>`;
+        else             leftEl=`<button class="caption-vote-btn votable" onclick="voteCaption('${c.id}','${cap.id}')">▲</button>`;
+        return `<div class="caption-entry">${leftEl}<div style="flex:1">
+          <div class="caption-text">${esc(cap.title?`"${cap.title}" — `:'')}${esc(cap.text)}</div>
+          <div class="caption-anon">Anonymous caption</div>
+        </div></div>`;
+      }).join('')+`</div>`
+      : `<div style="color:var(--text2);font-size:.88rem;padding:8px 0;">No captions were submitted.</div>`);
+  } else if (phase==='caption') {
+    const n = captions.length;
+    captionsHtml = `<div style="color:var(--text2);font-size:.85rem;padding:8px 0;">
+      ${n>0?`${n} caption${n!==1?'s':''} in so far — identities stay hidden until voting.`:'No captions yet — be the first!'}
+    </div>`;
+  } else {
+    const tv = captions.reduce((s,cap)=>s+(voteCounts[cap.id]||0),0);
+    captionsHtml = `<div style="color:var(--text2);font-size:.85rem;padding:8px 0;">
+      ${captions.length} captions · ${tv} vote${tv!==1?'s':''} cast — waiting for admin to reveal results.
+    </div>`;
+  }
+
+  let submitForm = '';
+  if (phase==='caption') {
+    submitForm = myCaption
+      ? `<div class="caption-submit-form" style="color:var(--text2);font-size:.85rem;">✅ Your caption is in — come back when voting opens!</div>`
+      : `<div class="caption-submit-form">
+          <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:10px;">Your Caption</div>
+          <div class="form-group"><input type="text" id="ct-${c.id}" placeholder="Title (optional)"></div>
+          <textarea id="cb-${c.id}" placeholder="Write something witty…" rows="3"></textarea>
+          <button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%;" onclick="submitCaption('${c.id}')">Submit Caption ✏️</button>
+        </div>`;
+  }
+
+  // Winner overlay on image
+  let imgHtml;
+  if (phase==='revealed' && captions.length>0) {
+    const winner = [...captions].sort((a,b)=>(voteCounts[b.id]||0)-(voteCounts[a.id]||0))[0];
+    imgHtml = `<div class="result-overlay">
+      <img class="contest-img" src="${ea(c.img_url)}" alt="${ea(c.title)}" ${imgErr()}>
+      <div class="result-caption-overlay">🥇 ${esc(winner.title?`"${winner.title}" — `:'')}${esc(winner.text)}</div>
+    </div>`;
+  } else {
+    imgHtml = `<img class="contest-img" src="${ea(c.img_url)}" alt="${ea(c.title)}" ${imgErr()}>`;
+  }
+
+  const adminActions = (isAdmin && phase==='closed')
+    ? `<div style="margin-top:14px;"><button class="btn btn-danger btn-sm" onclick="finalizeContest('${c.id}')">🏁 Reveal Results</button></div>`
+    : '';
+
+  return `<div class="contest-card" id="ccard-${c.id}">
+    <div class="contest-img-wrap">${imgHtml}</div>
+    <div class="contest-body">
+      <div class="contest-meta">
+        <div class="contest-title-text">${esc(c.title)}</div>
+        ${badges[phase]||''}${cdHtml?'&nbsp;'+cdHtml:''}
+      </div>
+      ${timelineHtml}
+      ${captionsHtml}
+      ${submitForm}
+      ${adminActions}
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════
+//  SUBMIT CAPTION
+// ════════════════════════════════════════════
+async function submitCaption(contestId) {
+  const title = (document.getElementById('ct-'+contestId)?.value||'').trim();
+  const text  = (document.getElementById('cb-'+contestId)?.value||'').trim();
+  if (!text) return toast('Write something witty!');
+  try {
+    const { data: contest } = await sb.from('contests').select('created_at,caption_hrs,vote_hrs,finalized').eq('id', contestId).single();
+    if (!contest) return toast('Contest not found');
+    if (getPhase(contest, Date.now()).phase !== 'caption') return toast('Caption window has closed');
+    const { error } = await sb.from('captions').insert({
+      contest_id: contestId, email: currentUser.email, title, text
+    });
+    if (error) {
+      if (error.code==='23505') return toast("You've already submitted a caption");
+      return toast('Error: '+error.message);
+    }
+    toast('Caption submitted! 🎭');
+    renderContests();
+  } catch(e) { toast('Error: '+e.message); }
+}
+
+// ════════════════════════════════════════════
+//  VOTE
+// ════════════════════════════════════════════
+async function voteCaption(contestId, captionId) {
+  try {
+    const { data: contest } = await sb.from('contests').select('created_at,caption_hrs,vote_hrs,finalized,captions(email)').eq('id', contestId).single();
+    if (!contest) return;
+    if (getPhase(contest, Date.now()).phase !== 'voting') return toast('Voting is not open');
+    const cap = (contest.captions||[]).find(x=>x.id===captionId);
+    if (cap?.email===currentUser.email) return toast("Can't vote for your own caption");
+    const { error } = await sb.from('votes').insert({
+      contest_id: contestId, caption_id: captionId, voter_email: currentUser.email
+    });
+    if (error) {
+      if (error.code==='23505') return toast("You've already voted");
+      return toast('Error: '+error.message);
+    }
+    toast('Vote cast! 🗳️');
+    renderContests();
+  } catch(e) { toast('Error: '+e.message); }
+}
+
+// ════════════════════════════════════════════
+//  FINALIZE
+// ════════════════════════════════════════════
+async function finalizeContest(contestId) {
+  try {
+    const { data: contest } = await sb.from('contests')
+      .select('*, captions(id,email,title,text)').eq('id',contestId).single();
+    const { data: allVotes } = await sb.from('votes').select('caption_id').eq('contest_id',contestId);
+    const vc = {};
+    (allVotes||[]).forEach(v=>{ vc[v.caption_id]=(vc[v.caption_id]||0)+1; });
+    await doFinalize(contest, vc);
+    toast('Results revealed! 🏆');
+    renderContests();
+  } catch(e) { toast('Error: '+e.message); }
+}
+
+async function doFinalize(contest, voteCounts) {
+  const sorted = [...(contest.captions||[])].sort((a,b)=>(voteCounts[b.id]||0)-(voteCounts[a.id]||0));
+  const pts = [3,2,1];
+  const updates = [];
+  sorted.slice(0,3).forEach((cap,i)=>{
+    if ((voteCounts[cap.id]||0)>0) updates.push({ email:cap.email, points:pts[i] });
+  });
+  // Upsert leaderboard points
+  for (const u of updates) {
+    const { data: existing } = await sb.from('leaderboard').select('points').eq('email',u.email).single();
+    const newPts = (existing?.points||0) + u.points;
+    await sb.from('leaderboard').upsert({ email:u.email, points:newPts }, { onConflict:'email' });
+  }
+  await sb.from('contests').update({ finalized:true }).eq('id', contest.id);
+}
+
+// ════════════════════════════════════════════
+//  LEADERBOARD
+// ════════════════════════════════════════════
+async function renderLeaderboard() {
+  const el = document.getElementById('leaderboard-list');
+  el.innerHTML = `<div class="empty"><div class="spinner" style="margin:0 auto"></div></div>`;
+  try {
+    const { data: lb } = await sb.from('leaderboard').select('email,points,users(handle)').order('points',{ascending:false});
+    if (!lb?.length) {
+      el.innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>No scores yet — finalize a contest!</p></div>`;
+      return;
+    }
+    const medals=['🥇','🥈','🥉'];
+    el.innerHTML=lb.map(({email,points,users:u},i)=>`
+      <div class="lb-row">
+        <div class="lb-rank ${i<3?'r'+(i+1):''}">${medals[i]||(i+1)}</div>
+        <div style="flex:1">
+          <div class="lb-handle">@${esc(u?.handle||email)}</div>
+          <div class="lb-sub">${esc(email)}</div>
+        </div>
+        <div class="lb-pts">${points} pts</div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML=`<div class="empty"><p>Error loading leaderboard.</p></div>`; }
+}
+
+// ════════════════════════════════════════════
+//  ADMIN PANEL
+// ════════════════════════════════════════════
+async function renderAdmin() {
+  loadCfgIntoForm();
+  // Contests
+  const cl = document.getElementById('admin-contests-list');
+  cl.innerHTML = `<div style="color:var(--text2);padding:8px;">Loading…</div>`;
+  try {
+    const { data: contests } = await sb.from('contests')
+      .select('id,title,created_at,finalized,caption_hrs,vote_hrs,captions(id),votes:votes(id)')
+      .order('created_at',{ascending:false});
+    if (!contests?.length) { cl.innerHTML='<div style="color:var(--text2);padding:8px;">No contests yet.</div>'; }
+    else {
+      const now=Date.now();
+      cl.innerHTML=contests.map(c=>{
+        const {phase,captionEnd,voteEnd}=getPhase(c,now);
+        const plab={caption:'✏️ Captions',voting:'🗳 Voting',closed:'⌛ Closed',revealed:'✅ Revealed'}[phase];
+        return `<div class="lb-row" style="flex-wrap:wrap;gap:8px;align-items:flex-start;">
+          <div style="flex:1;min-width:180px;">
+            <div style="font-weight:600;">${esc(c.title)} <span class="tag">${plab}</span></div>
+            <div style="font-size:.75rem;color:var(--text2);margin-top:3px;">
+              ${c.captions?.length||0} captions · ${c.votes?.length||0} votes<br>
+              Captions → ${new Date(captionEnd).toLocaleString()}<br>
+              Voting → ${new Date(voteEnd).toLocaleString()}
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:4px;">
+            ${phase==='closed'?`<button class="btn btn-primary btn-sm" onclick="finalizeContest('${c.id}')">🏁 Reveal</button>`:''}
+            <button class="btn btn-danger btn-sm" onclick="adminDeleteContest('${c.id}')">Delete</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  } catch(e) { cl.innerHTML=`<div style="color:var(--text2);padding:8px;">Error loading.</div>`; }
+
+  // Users
+  const ul = document.getElementById('admin-users-list');
+  try {
+    const { data: users } = await sb.from('users').select('email,handle,is_admin').order('handle');
+    ul.innerHTML=(users||[]).map(u=>`
+      <div class="lb-row">
+        <div class="avatar">${u.handle[0].toUpperCase()}</div>
+        <div style="flex:1;margin-left:10px;">
+          <div style="font-weight:600;">@${esc(u.handle)} ${u.is_admin?'<span class="badge badge-red" style="font-size:.68rem;margin-left:4px;">Admin</span>':''}</div>
+          <div style="font-size:.75rem;color:var(--text2);">${esc(u.email)}</div>
+        </div>
+        ${u.email!==currentUser.email?`<button class="btn btn-danger btn-sm" onclick="adminDeleteUser('${ea(u.email)}')">Delete</button>`:''}
+      </div>`).join('');
+  } catch {}
+}
+
+async function adminDeleteContest(id) {
+  if (!confirm('Delete this contest and all its data?')) return;
+  await sb.from('votes').delete().eq('contest_id',id);
+  await sb.from('captions').delete().eq('contest_id',id);
+  await sb.from('contests').delete().eq('id',id);
+  toast('Contest deleted'); renderAdmin();
+}
+async function adminDeleteUser(email) {
+  if (!confirm('Delete user '+email+'?')) return;
+  await sb.from('leaderboard').delete().eq('email',email);
+  await sb.from('users').delete().eq('email',email);
+  toast('User deleted'); renderAdmin();
+}
+
+// ════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════
+const v   = id => document.getElementById(id)?.value || '';
+const esc = s  => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+const ea  = s  => esc(s);
+
+function fmtMs(ms) {
+  const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60),d=Math.floor(h/24);
+  if(d>0) return `${d}d ${h%24}h`;
+  if(h>0) return `${h}h ${m%60}m`;
+  if(m>0) return `${m}m`;
+  return `${s}s`;
+}
+
+function imgErr() {
+  return `onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22240%22%3E%3Crect fill=%22%231c1c2e%22 width=%22400%22 height=%22240%22/%3E%3Ctext fill=%22%238888aa%22 x=%22200%22 y=%22125%22 text-anchor=%22middle%22 font-size=%2216%22 font-family=%22sans-serif%22%3EImage unavailable%3C/text%3E%3C/svg%3E'"`;
+}
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ════════════════════════════════════════════
+//  SERVICE WORKER REGISTRATION
+// ════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
+// ════════════════════════════════════════════
+//  START
+// ════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
