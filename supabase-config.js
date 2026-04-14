@@ -5,21 +5,23 @@
 // ═══════════════════════════════════════════════════════
 
 // ── Supabase ─────────────────────────────────────────
-
 const SUPABASE_URL      = "https://fvkyomenudruyukqnjak.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_xc5tUcgfnRrVtoKizSYFjg_irjTwwt2";
 
 // ── Admin ─────────────────────────────────────────────
 const ADMIN_PASSWORD = "caption2024";  // change this!
 
-// ── Anthropic API (AI image generation) ──────────────
-// Leave blank to require users to bring their own key.
-const ANTHROPIC_API_KEY = "";
+// ── Hugging Face API (AI image generation — FREE) ─────
+// 1. Go to huggingface.co
+// 2. Click your profile avatar (top-right) → Settings → Access Tokens
+// 3. Click "New token", name it anything, choose "Read" role, click Create
+// 4. Copy the token (starts with hf_...) and paste below
+//
+// This is the SHARED key used when a user doesn't enter their own.
+// Leave as "" to require users to bring their own key.
+// Note: key is visible in deployed JS — fine for private groups.
+const HF_API_KEY = "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";  // e.g. "hf_aBcDeFgHiJ..."
 
 // ── VAPID Public Key (Web Push notifications) ─────────
-// Generate a VAPID key pair:
-//   npx web-push generate-vapid-keys
-// Then set the private key as a Supabase secret:
-//   supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@example.com
-// Paste ONLY the public key here — the private key lives server-side only.
-const VAPID_PUBLIC_KEY = "BCIiOFPx02FHVO7dB_MS4SnrKGoThyKrnrKCxtQBL_fqk-EVb4DXMiJA47Gzn5IuaX8H-thvnlUUbtS08DZ27bk";  // e.g. "BNtWp5_abc123..."
+// See SETUP.md for instructions. Leave blank to disable push.
+const VAPID_PUBLIC_KEY = "BCIiOFPx02FHVO7dB_MS4SnrKGoThyKrnrKCxtQBL_fqk-EVb4DXMiJA47Gzn5IuaX8H-thvnlUUbtS08DZ27bk";

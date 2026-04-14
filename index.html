@@ -307,9 +307,13 @@ textarea{resize:vertical;min-height:88px;line-height:1.5}
             <label>Describe the image</label>
             <textarea id="ai-prompt" rows="3" placeholder="A cat wearing a tiny cowboy hat at a rodeo, golden hour lighting…"></textarea>
           </div>
-          <div class="form-group" style="margin-bottom:12px">
-            <label>Your Anthropic API Key <span style="text-transform:none;font-weight:400">(optional)</span></label>
-            <input type="password" id="ai-user-key" placeholder="sk-ant-… leave blank for shared key" autocomplete="off" spellcheck="false">
+          <div class="form-group" style="margin-bottom:4px">
+            <label>Hugging Face API Key <span style="text-transform:none;font-weight:400">(optional — uses shared key if blank)</span></label>
+            <input type="password" id="ai-user-key" placeholder="hf_… leave blank to use shared key" autocomplete="off" spellcheck="false">
+          </div>
+          <div style="font-size:.74rem;color:var(--text2);margin-bottom:14px;line-height:1.5;">
+            Get a free key at <strong>huggingface.co</strong> → profile avatar → Settings → Access Tokens → New token (Read role).
+            Uses <strong>Stable Diffusion XL</strong> — free with rate limits.
           </div>
           <button class="btn btn-ghost btn-full" id="ai-gen-btn" onclick="generateAiImage()">✨ Generate Image</button>
           <div id="ai-status" style="display:none"><div class="ai-generating"><div class="ai-pulse"></div><span id="ai-status-text">Generating…</span></div></div>
@@ -634,37 +638,74 @@ function previewUrl(){
   prev.onload=()=>{warn.style.display='none'};
 }
 async function generateAiImage(){
-  const prompt=v('ai-prompt').trim(),userKey=v('ai-user-key').trim(),apiKey=userKey||window.ANTHROPIC_API_KEY||'';
+  const prompt=v('ai-prompt').trim();
+  const userKey=v('ai-user-key').trim();
+  const apiKey=userKey||window.HF_API_KEY||'';
   if(!prompt)return toast('Describe the image you want');
-  if(!apiKey)return toast('No API key — add one above or ask your admin to set a shared key');
+  if(!apiKey)return toast('No Hugging Face key — add one above or ask your admin to set a shared key in supabase-config.js');
   const btn=document.getElementById('ai-gen-btn'),status=document.getElementById('ai-status'),stText=document.getElementById('ai-status-text'),prev=document.getElementById('ai-preview');
   btn.disabled=true;status.style.display='block';prev.style.display='none';submitState.finalUrl=null;
-  const steps=['Consulting the muse…','Sketching concepts…','Adding dramatic lighting…','Rendering pixels…','Finishing touches…'];
+  const steps=['Warming up the diffuser…','Laying down the noise…','Denoising step by step…','Sharpening details…','Almost there…'];
   let si=0;stText.textContent=steps[0];
-  const stepTimer=setInterval(()=>{si=(si+1)%steps.length;stText.textContent=steps[si]},2200);
+  const stepTimer=setInterval(()=>{si=(si+1)%steps.length;stText.textContent=steps[si]},3000);
+  // HF Inference API returns raw image bytes (not JSON)
+  // SDXL can take 20-60s on cold start — we set a generous timeout
+  const MODEL='stabilityai/stable-diffusion-xl-base-1.0';
   try{
-    const aiResp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-5',max_tokens:4096,messages:[{role:'user',content:`Create a vivid image prompt based on this description, then produce the image as a base64 PNG data URL on its own line in format DATA_URL:<data:image/png;base64,...>\n\nDescription: ${prompt}\n\nRespond with just the DATA_URL line.`}]})});
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),120000); // 2 min timeout
+    const resp=await fetch(`https://api-inference.huggingface.co/models/${MODEL}`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json','X-Wait-For-Model':'true'},
+      body:JSON.stringify({inputs:prompt,parameters:{width:1024,height:1024,num_inference_steps:30,guidance_scale:7.5}}),
+      signal:controller.signal
+    });
+    clearTimeout(timeout);
     clearInterval(stepTimer);
-    if(!aiResp.ok){const err=await aiResp.json().catch(()=>({}));throw new Error(err.error?.message||`API error ${aiResp.status}`)}
-    const aiData=await aiResp.json();
-    const text=(aiData.content||[]).find(b=>b.type==='text')?.text||'';
-    const match=text.match(/DATA_URL:(data:image\/[^;\s]+;base64,[A-Za-z0-9+/=]+)/);
-    if(!match)throw new Error('Image generation requires the Images API. Use the URL tab to paste a generated image from DALL·E, Midjourney, or Stable Diffusion.');
-    const dataUrl=match[1];
-    prev.src=dataUrl;prev.style.display='block';stText.textContent='Image ready! ✓';
-    const blob=dataUrlToBlob(dataUrl);
-    const path=`contest-images/ai-${Date.now()}.png`;
-    const{error}=await sb.storage.from('contest-images').upload(path,blob,{contentType:'image/png',cacheControl:'3600'});
-    if(error)throw new Error('Storage upload failed: '+error.message);
-    const{data:{publicUrl}}=sb.storage.from('contest-images').getPublicUrl(path);
-    submitState.finalUrl=publicUrl;
+    if(resp.status===503){
+      // Model loading — retry once after a short wait
+      stText.textContent='Model warming up, retrying…';
+      status.style.display='block';
+      await new Promise(r=>setTimeout(r,20000));
+      const retry=await fetch(`https://api-inference.huggingface.co/models/${MODEL}`,{method:'POST',headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json','X-Wait-For-Model':'true'},body:JSON.stringify({inputs:prompt,parameters:{width:1024,height:1024,num_inference_steps:30,guidance_scale:7.5}})});
+      if(!retry.ok){const t=await retry.text().catch(()=>'');throw new Error(`HF API error ${retry.status}: ${t.slice(0,120)}`)}
+      const blob2=await retry.blob();
+      await uploadAndPreview(blob2,prev,stText);
+    } else if(!resp.ok){
+      const errText=await resp.text().catch(()=>'');
+      // Parse HF error JSON if present
+      let msg=`HF API error ${resp.status}`;
+      try{const j=JSON.parse(errText);msg=j.error||j.message||msg}catch{}
+      if(resp.status===401)msg='Invalid Hugging Face API key. Check it at huggingface.co → Settings → Access Tokens.';
+      if(resp.status===429)msg='Rate limit reached. Wait a minute and try again, or upgrade your HF plan.';
+      throw new Error(msg);
+    } else {
+      const blob=await resp.blob();
+      await uploadAndPreview(blob,prev,stText);
+    }
     setTimeout(()=>{status.style.display='none'},1500);
   }catch(err){
     clearInterval(stepTimer);status.style.display='none';
+    const msg=err.name==='AbortError'?'Request timed out (model may be overloaded). Try again in a moment.':err.message;
     let ed=document.getElementById('ai-error');
     if(!ed){ed=document.createElement('div');ed.id='ai-error';ed.style.cssText='margin-top:12px;padding:12px;border-radius:10px;background:rgba(255,82,119,.1);border:1px solid rgba(255,82,119,.25);font-size:.82rem;color:#ff8aa0;line-height:1.5;';document.getElementById('ai-gen-btn').after(ed)}
-    ed.textContent='⚠ '+err.message;ed.style.display='block';
+    ed.textContent='⚠ '+msg;ed.style.display='block';
   }finally{btn.disabled=false}
+}
+
+// Upload a Blob to Supabase Storage and show preview
+async function uploadAndPreview(blob,prevEl,stTextEl){
+  // Show local preview immediately while uploading
+  const localUrl=URL.createObjectURL(blob);
+  prevEl.src=localUrl;prevEl.style.display='block';
+  stTextEl.textContent='Uploading to storage…';
+  const path=`contest-images/ai-${Date.now()}.png`;
+  const{error}=await sb.storage.from('contest-images').upload(path,blob,{contentType:'image/png',cacheControl:'3600'});
+  if(error)throw new Error('Storage upload failed: '+error.message);
+  const{data:{publicUrl}}=sb.storage.from('contest-images').getPublicUrl(path);
+  submitState.finalUrl=publicUrl;
+  prevEl.src=publicUrl; // swap to permanent URL
+  stTextEl.textContent='Image ready! ✓';
 }
 async function submitImage(){
   const title=v('si-title').trim();
