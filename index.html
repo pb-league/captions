@@ -463,8 +463,18 @@ textarea{resize:vertical;min-height:88px;line-height:1.5}
 //  SUPABASE + STATE
 // ════════════════════════════════════════
 let sb;
-try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
-catch(e) { console.error('Supabase config missing'); }
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    db: { schema: 'public' },
+    global: {
+      headers: {
+        // Tell PostgREST to reload schema cache on every request.
+        // Remove this line after the app has been working for a day.
+        'Accept-Profile': 'public'
+      }
+    }
+  });
+} catch(e) { console.error('Supabase config missing'); }
 
 const ADMIN_PASS = window.ADMIN_PASSWORD || "caption2024";
 let cfg = { captionHrs:48, voteHrs:24, autoFinalize:false };
@@ -640,7 +650,7 @@ function previewUrl(){
 async function generateAiImage(){
   const prompt=v('ai-prompt').trim();
   const userKey=v('ai-user-key').trim();
-  const apiKey=userKey||window.HF_API_KEY||'';
+  const apiKey=userKey||((typeof window.HF_API_KEY!=='undefined')?window.HF_API_KEY:'')||'';
   if(!prompt)return toast('Describe the image you want');
   if(!apiKey)return toast('No Hugging Face key — add one above or ask your admin to set a shared key in supabase-config.js');
   const btn=document.getElementById('ai-gen-btn'),status=document.getElementById('ai-status'),stText=document.getElementById('ai-status-text'),prev=document.getElementById('ai-preview');
@@ -1079,7 +1089,7 @@ async function adminDeleteUser(email){if(!confirm('Delete user '+email+'?'))retu
 // ════════════════════════════════════════
 //  PUSH NOTIFICATIONS
 // ════════════════════════════════════════
-// const VAPID_PUBLIC_KEY = window.VAPID_PUBLIC_KEY || '';
+// VAPID_PUBLIC_KEY is read directly from window (defined in supabase-config.js)
 
 async function loadNotifStatus(){
   if(!('Notification' in window)||!('serviceWorker' in navigator)){
@@ -1102,12 +1112,12 @@ async function loadNotifStatus(){
   }
 }
 async function enablePush(){
-  if(!VAPID_PUBLIC_KEY){toast('Push not configured — admin needs to set VAPID_PUBLIC_KEY in supabase-config.js');return}
+  if(!window.VAPID_PUBLIC_KEY){toast('Push not configured — set VAPID_PUBLIC_KEY in supabase-config.js');return}
   try{
     const perm=await Notification.requestPermission();
     if(perm!=='granted'){toast('Notifications blocked');return}
     const reg=await navigator.serviceWorker.ready;
-    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(window.VAPID_PUBLIC_KEY)});
     await sb.from('push_subscriptions').upsert({email:currentUser.email,subscription:sub.toJSON(),notify_results:true,notify_voting:false,notify_new_contest:false,notify_flagged:true},{onConflict:'email'});
     toast('Notifications enabled! 🔔');loadNotifStatus();
   }catch(e){toast('Could not enable notifications: '+e.message)}
@@ -1132,10 +1142,18 @@ async function saveNotifPrefs(){
   await sb.from('push_subscriptions').update({notify_results:document.getElementById('pref-results').checked,notify_voting:document.getElementById('pref-voting').checked,notify_new_contest:document.getElementById('pref-new').checked}).eq('email',currentUser.email);
 }
 async function triggerPush(payload){
-  if(!VAPID_PUBLIC_KEY)return; // Push not configured, skip silently
-  try{
-    await fetch(`${SUPABASE_URL}/functions/v1/send-push`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON_KEY},body:JSON.stringify(payload)});
-  }catch{}
+  // Skip entirely if VAPID key not configured — Edge Function won't be deployed either
+  if(!window.VAPID_PUBLIC_KEY)return;
+  // Fire-and-forget — never let push errors affect the main app flow.
+  // We use a plain Promise chain (not await) so CORS preflight errors
+  // are fully contained and never surface to the caller.
+  Promise.resolve().then(()=>
+    fetch(`${SUPABASE_URL}/functions/v1/send-push`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON_KEY},
+      body:JSON.stringify(payload)
+    })
+  ).catch(()=>{}); // swallow network/CORS errors silently
 }
 function urlBase64ToUint8Array(b64){const p='='.repeat((4-b64.length%4)%4),b=atob((b64+p).replace(/-/g,'+').replace(/_/g,'/')),out=new Uint8Array(b.length);for(let i=0;i<b.length;i++)out[i]=b.charCodeAt(i);return out}
 function renderNotifPage(){loadNotifStatus()}
