@@ -7,1291 +7,1118 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="CaptionClash">
-<meta name="description" content="The caption contest arena — submit images, write captions, vote for the best.">
+<meta name="description" content="The caption contest arena.">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>CaptionClash ⚡</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════════
-   TOKENS
-═══════════════════════════════════════════════ */
-:root {
-  --bg:        #0d0d14;
-  --surface:   #14141f;
-  --surface2:  #1c1c2e;
-  --surface3:  #242438;
-  --border:    #2a2a42;
-  --border2:   #353555;
-  --accent:    #e8ff47;
-  --accent-dim:rgba(232,255,71,.12);
-  --accent2:   #ff5277;
-  --accent3:   #47ffca;
-  --blue:      #6ea8ff;
-  --blue-dim:  rgba(110,168,255,.12);
-  --text:      #eeeef5;
-  --text2:     #8888aa;
-  --text3:     #55556a;
-  --gold:      #ffc940;
-  --silver:    #c8c8e0;
-  --bronze:    #d4804a;
-  --r:         14px;
-  --r-lg:      22px;
-  --r-xl:      28px;
-  --safe-top:    env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* ═══════════════════════════════════════════════
-   RESET + BASE
-═══════════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { -webkit-text-size-adjust: 100%; }
-body {
-  font-family: 'Instrument Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100dvh;
-  overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent;
-  overscroll-behavior: none;
-}
-
-/* Subtle noise overlay */
-body::after {
-  content: '';
-  position: fixed; inset: 0; z-index: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
-}
-
-#app { position: relative; z-index: 1; }
-
-/* ═══════════════════════════════════════════════
-   TYPOGRAPHY
-═══════════════════════════════════════════════ */
-.syne { font-family: 'Syne', sans-serif; }
-.mono { font-family: 'JetBrains Mono', monospace; }
-
-/* ═══════════════════════════════════════════════
-   HEADER
-═══════════════════════════════════════════════ */
-.header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: calc(var(--safe-top) + 14px) 20px 14px;
-  background: rgba(13,13,20,.92);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; z-index: 200;
-}
-.logo {
-  font-family: 'Syne', sans-serif; font-weight: 800;
-  font-size: 1.4rem; letter-spacing: -0.5px;
-  color: var(--accent); text-decoration: none; line-height: 1;
-}
-.logo em { color: var(--accent2); font-style: normal; }
-.header-right { display: flex; align-items: center; gap: 10px; }
-.user-chip {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 999px; padding: 5px 12px 5px 5px; cursor: pointer;
-  transition: border-color .2s;
-}
-.user-chip:hover { border-color: var(--border2); }
-.avatar {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: var(--accent); color: var(--bg);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Syne', sans-serif; font-weight: 800; font-size: .7rem;
-  flex-shrink: 0;
-}
-
-/* ═══════════════════════════════════════════════
-   BOTTOM NAV (mobile-first)
-═══════════════════════════════════════════════ */
-.bottom-nav {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
-  background: rgba(13,13,20,.96);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid var(--border);
-  display: flex;
-  padding-bottom: var(--safe-bottom);
-}
-.bnav-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  gap: 3px; padding: 10px 0 8px;
-  background: none; border: none; cursor: pointer;
-  color: var(--text3); font-family: 'Instrument Sans', sans-serif;
-  font-size: .65rem; font-weight: 600; letter-spacing: .3px;
-  text-transform: uppercase; transition: color .2s;
-  -webkit-tap-highlight-color: transparent;
-}
-.bnav-btn .icon { font-size: 1.3rem; transition: transform .2s; }
-.bnav-btn.active { color: var(--accent); }
-.bnav-btn.active .icon { transform: scale(1.15); }
-.bnav-btn#bnav-admin { display: none; }
-
-/* ═══════════════════════════════════════════════
-   MAIN CONTENT
-═══════════════════════════════════════════════ */
-.main {
-  padding: 20px 16px;
-  padding-bottom: calc(80px + var(--safe-bottom));
-  max-width: 680px; margin: 0 auto;
-}
-.page { display: none; }
-.page.active { display: block; animation: fadeUp .25s ease; }
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ═══════════════════════════════════════════════
-   CARDS
-═══════════════════════════════════════════════ */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 20px;
-  margin-bottom: 16px;
-}
-.card-title {
-  font-family: 'Syne', sans-serif; font-weight: 700;
-  font-size: 1rem; margin-bottom: 14px; color: var(--text);
-}
-
-/* ═══════════════════════════════════════════════
-   FORMS
-═══════════════════════════════════════════════ */
-.form-group { margin-bottom: 16px; }
-.form-group:last-child { margin-bottom: 0; }
-label {
-  display: block; font-size: .72rem; font-weight: 600;
-  letter-spacing: .6px; text-transform: uppercase;
-  color: var(--text2); margin-bottom: 6px;
-}
-input, textarea, select {
-  width: 100%;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 13px 14px;
-  color: var(--text);
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 1rem; /* prevent iOS zoom */
-  transition: border-color .2s, box-shadow .2s;
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-input:focus, textarea:focus, select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
-}
-textarea { resize: vertical; min-height: 88px; line-height: 1.5; }
-
-/* ═══════════════════════════════════════════════
-   BUTTONS
-═══════════════════════════════════════════════ */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-  padding: 14px 22px; border-radius: var(--r);
-  border: none; cursor: pointer;
-  font-family: 'Instrument Sans', sans-serif;
-  font-weight: 600; font-size: .95rem;
-  transition: all .18s; text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  min-height: 48px; /* WCAG touch target */
-}
-.btn-primary { background: var(--accent); color: #0a0a10; }
-.btn-primary:active { background: #d4ea30; transform: scale(.97); }
-.btn-danger  { background: var(--accent2); color: #fff; }
-.btn-danger:active  { background: #e03060; transform: scale(.97); }
-.btn-ghost   { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-ghost:active   { background: var(--surface3); }
-.btn-sm { padding: 10px 16px; font-size: .85rem; min-height: 40px; }
-.btn-full { width: 100%; }
-.btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
-
-/* ═══════════════════════════════════════════════
-   BADGES
-═══════════════════════════════════════════════ */
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 10px; border-radius: 999px;
-  font-size: .72rem; font-weight: 600; letter-spacing: .3px;
-  white-space: nowrap;
-}
-.badge-green  { background: rgba(71,255,202,.12); color: var(--accent3); border: 1px solid rgba(71,255,202,.25); }
-.badge-blue   { background: var(--blue-dim);       color: var(--blue);   border: 1px solid rgba(110,168,255,.25); }
-.badge-yellow { background: var(--accent-dim);     color: var(--accent); border: 1px solid rgba(232,255,71,.25); }
-.badge-red    { background: rgba(255,82,119,.12);  color: var(--accent2);border: 1px solid rgba(255,82,119,.25); }
-.badge-gray   { background: var(--surface2);       color: var(--text2);  border: 1px solid var(--border); }
-
-/* ═══════════════════════════════════════════════
-   AUTH PAGE
-═══════════════════════════════════════════════ */
-#auth-page {
-  min-height: 100dvh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px 16px;
-}
-.auth-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-xl);
-  padding: 32px 24px;
-  width: 100%; max-width: 400px;
-}
-.auth-logo {
-  font-family: 'Syne', sans-serif; font-weight: 800;
-  font-size: 2.2rem; color: var(--accent);
-  margin-bottom: 4px; line-height: 1;
-}
-.auth-logo em { color: var(--accent2); font-style: normal; }
-.auth-sub { color: var(--text2); margin-bottom: 28px; font-size: .95rem; }
-.auth-switch { text-align: center; margin-top: 20px; color: var(--text2); font-size: .88rem; }
-.auth-switch a { color: var(--accent); text-decoration: none; cursor: pointer; font-weight: 600; }
-.pin-input {
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 1.4rem !important;
-  letter-spacing: 8px;
-  text-align: center;
-}
-
-/* ═══════════════════════════════════════════════
-   SECTION HEADER
-═══════════════════════════════════════════════ */
-.section-head {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px;
-}
-.section-head h2 {
-  font-family: 'Syne', sans-serif; font-weight: 800;
-  font-size: 1.5rem; letter-spacing: -.3px;
-}
-
-/* ═══════════════════════════════════════════════
-   CONTEST CARD
-═══════════════════════════════════════════════ */
-.contest-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-xl);
-  overflow: hidden; margin-bottom: 20px;
-}
-.contest-img-wrap {
-  position: relative; background: var(--surface2);
-  min-height: 180px; display: flex; align-items: center; justify-content: center;
-}
-.contest-img {
-  width: 100%; max-height: 340px;
-  object-fit: cover; display: block;
-}
-.contest-body { padding: 16px 18px 20px; }
-.contest-meta { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-.contest-title-text {
-  font-family: 'Syne', sans-serif; font-weight: 700;
-  font-size: 1.15rem; flex: 1; min-width: 0; line-height: 1.25;
-}
-
+:root{--bg:#0d0d14;--surface:#14141f;--surface2:#1c1c2e;--surface3:#242438;--border:#2a2a42;--border2:#353555;--accent:#e8ff47;--accent-dim:rgba(232,255,71,.12);--accent2:#ff5277;--accent3:#47ffca;--blue:#6ea8ff;--blue-dim:rgba(110,168,255,.12);--text:#eeeef5;--text2:#8888aa;--text3:#55556a;--gold:#ffc940;--silver:#c8c8e0;--bronze:#d4804a;--r:14px;--r-lg:22px;--r-xl:28px;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none}
+#app{position:relative;z-index:1}
+.header{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--safe-top) + 14px) 20px 14px;background:rgba(13,13,20,.92);backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;letter-spacing:-.5px;color:var(--accent);text-decoration:none;line-height:1}
+.logo em{color:var(--accent2);font-style:normal}
+.header-right{display:flex;align-items:center;gap:10px}
+.user-chip{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:5px 12px 5px 5px;cursor:pointer;transition:border-color .2s}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--bg);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:.7rem;flex-shrink:0}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(13,13,20,.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom)}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0 8px;background:none;border:none;cursor:pointer;color:var(--text3);font-family:'Instrument Sans',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.3px;text-transform:uppercase;transition:color .2s;-webkit-tap-highlight-color:transparent;position:relative}
+.bnav-btn .icon{font-size:1.3rem;transition:transform .2s}
+.bnav-btn.active{color:var(--accent)}
+.bnav-btn.active .icon{transform:scale(1.15)}
+.bnav-btn#bnav-admin{display:none}
+.notif-dot{position:absolute;top:6px;right:calc(50% - 14px);width:8px;height:8px;background:var(--accent2);border-radius:50%;display:none}
+.main{padding:20px 16px;padding-bottom:calc(80px + var(--safe-bottom));max-width:680px;margin:0 auto}
+.page{display:none}
+.page.active{display:block;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;margin-bottom:16px}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:14px;color:var(--text)}
+.form-group{margin-bottom:16px}
+.form-group:last-child{margin-bottom:0}
+label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:6px}
+input,textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:1rem;transition:border-color .2s,box-shadow .2s;outline:none;-webkit-appearance:none;appearance:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+textarea{resize:vertical;min-height:88px;line-height:1.5}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:14px 22px;border-radius:var(--r);border:none;cursor:pointer;font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:.95rem;transition:all .18s;text-decoration:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;min-height:48px}
+.btn-primary{background:var(--accent);color:#0a0a10}
+.btn-primary:active{background:#d4ea30;transform:scale(.97)}
+.btn-danger{background:var(--accent2);color:#fff}
+.btn-danger:active{background:#e03060;transform:scale(.97)}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:active{background:var(--surface3)}
+.btn-sm{padding:10px 16px;font-size:.85rem;min-height:40px}
+.btn-full{width:100%}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:600;letter-spacing:.3px;white-space:nowrap}
+.badge-green{background:rgba(71,255,202,.12);color:var(--accent3);border:1px solid rgba(71,255,202,.25)}
+.badge-blue{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(110,168,255,.25)}
+.badge-yellow{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(232,255,71,.25)}
+.badge-red{background:rgba(255,82,119,.12);color:var(--accent2);border:1px solid rgba(255,82,119,.25)}
+.badge-gray{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.badge-purple{background:rgba(168,130,255,.15);color:#c4a8ff;border:1px solid rgba(168,130,255,.3)}
+/* AUTH */
+#auth-page{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:32px 24px;width:100%;max-width:400px}
+.auth-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:2.2rem;color:var(--accent);margin-bottom:4px;line-height:1}
+.auth-logo em{color:var(--accent2);font-style:normal}
+.auth-sub{color:var(--text2);margin-bottom:28px;font-size:.95rem}
+.auth-switch{text-align:center;margin-top:20px;color:var(--text2);font-size:.88rem}
+.auth-switch a{color:var(--accent);text-decoration:none;cursor:pointer;font-weight:600}
+.pin-input{font-family:'JetBrains Mono',monospace!important;font-size:1.4rem!important;letter-spacing:8px;text-align:center}
+/* SECTION HEADER */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-head h2{font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;letter-spacing:-.3px}
+/* CONTEST CARD */
+.contest-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;margin-bottom:20px}
+.contest-img-wrap{position:relative;background:var(--surface2);min-height:180px;display:flex;align-items:center;justify-content:center}
+.contest-img{width:100%;max-height:340px;object-fit:cover;display:block}
+.contest-body{padding:16px 18px 20px}
+.contest-meta{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.contest-title-text{font-family:'Syne',sans-serif;font-weight:700;font-size:1.15rem;flex:1;min-width:0;line-height:1.25}
 /* TIMELINE */
-.timeline-bar {
-  display: flex; border-radius: 10px; overflow: hidden;
-  border: 1px solid var(--border); margin-bottom: 14px;
-}
-.tl-seg {
-  flex: 1; padding: 7px 8px; text-align: center;
-  font-family: 'JetBrains Mono', monospace; font-size: .65rem;
-  color: var(--text3); background: var(--surface2);
-  border-right: 1px solid var(--border); line-height: 1.3;
-}
-.tl-seg:last-child { border-right: none; }
-.tl-active  { background: var(--accent-dim); color: var(--accent); font-weight: 700; }
-.tl-vote    { background: var(--blue-dim);   color: var(--blue);   font-weight: 700; }
-.tl-done    { opacity: .45; }
-.tl-result  { background: rgba(255,82,119,.1); color: var(--accent2); font-weight: 700; }
-
-/* COUNTDOWN */
-.countdown {
-  font-family: 'JetBrains Mono', monospace; font-size: .75rem;
-  color: var(--text2); white-space: nowrap;
-}
-.countdown.urgent { color: var(--accent2); }
-
-/* ═══════════════════════════════════════════════
-   CAPTIONS
-═══════════════════════════════════════════════ */
-.caption-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-.caption-entry {
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 13px 14px;
-  display: flex; align-items: flex-start; gap: 12px;
-  transition: border-color .2s;
-}
-.caption-entry.winner-1 { border-color: var(--gold);   background: rgba(255,201,64,.07); }
-.caption-entry.winner-2 { border-color: var(--silver); background: rgba(200,200,224,.05); }
-.caption-entry.winner-3 { border-color: var(--bronze); background: rgba(212,128,74,.06); }
-
-.caption-vote-btn {
-  min-width: 48px; min-height: 52px;
-  background: var(--surface3); border: 1px solid var(--border);
-  border-radius: 10px; color: var(--text2); cursor: pointer;
-  display: flex; align-items: center; justify-content: center; flex-direction: column;
-  font-family: 'JetBrains Mono', monospace; font-size: .78rem; font-weight: 600;
-  transition: all .18s; flex-shrink: 0; gap: 1px;
-  touch-action: manipulation;
-}
-.caption-vote-btn:active:not(:disabled) { transform: scale(.93); }
-.caption-vote-btn.votable:active { border-color: var(--accent); color: var(--accent); }
-.caption-vote-btn.voted { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-.caption-vote-btn:disabled { opacity: .35; cursor: not-allowed; }
-.caption-text { font-size: .95rem; line-height: 1.55; flex: 1; }
-.caption-anon { font-size: .72rem; color: var(--text3); margin-top: 4px; font-style: italic; }
-.vote-medal {
-  min-width: 48px; text-align: center;
-  font-size: 1.4rem; line-height: 1;
-  display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0;
-}
-.vote-medal span { font-family: 'JetBrains Mono', monospace; font-size: .68rem; color: var(--text2); }
-
-.caption-submit-form {
-  background: var(--surface2); border: 1px dashed var(--border);
-  border-radius: var(--r); padding: 14px; margin-top: 12px;
-}
-.anon-notice {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--blue-dim); border: 1px solid rgba(110,168,255,.2);
-  border-radius: 10px; padding: 10px 13px;
-  font-size: .82rem; color: var(--blue); margin-bottom: 12px;
-}
-
-/* ═══════════════════════════════════════════════
-   RESULT OVERLAY
-═══════════════════════════════════════════════ */
-.result-overlay { position: relative; display: block; width: 100%; }
-.result-caption-overlay {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,.92));
-  padding: 36px 18px 18px; text-align: center;
-  font-family: 'Syne', sans-serif; font-weight: 700;
-  font-size: 1.05rem; color: #fff; letter-spacing: .2px; line-height: 1.35;
-}
-
-/* ═══════════════════════════════════════════════
-   LEADERBOARD
-═══════════════════════════════════════════════ */
-.lb-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 18px; border-bottom: 1px solid var(--border);
-  transition: background .15s;
-}
-.lb-row:last-child { border-bottom: none; }
-.lb-row:active { background: var(--surface2); }
-.lb-rank { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; min-width: 34px; text-align: center; }
-.lb-rank.r1 { color: var(--gold); } .lb-rank.r2 { color: var(--silver); } .lb-rank.r3 { color: var(--bronze); }
-.lb-handle { font-weight: 600; flex: 1; font-size: .95rem; }
-.lb-sub { font-size: .75rem; color: var(--text2); }
-.lb-pts { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 600; color: var(--accent); }
-
-/* ═══════════════════════════════════════════════
-   URL INPUT (no file upload — URL only)
-═══════════════════════════════════════════════ */
-.img-url-preview {
-  width: 100%; max-height: 220px; object-fit: cover;
-  border-radius: var(--r); margin-top: 10px;
-  display: none; border: 1px solid var(--border);
-}
-
-/* ═══════════════════════════════════════════════
-   TIMING CHIPS
-═══════════════════════════════════════════════ */
-.timing-row { display: flex; gap: 10px; flex-wrap: wrap; }
-.timing-chip {
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 10px; padding: 8px 13px;
-  font-family: 'JetBrains Mono', monospace; font-size: .75rem; color: var(--text2);
-}
-.timing-chip strong { color: var(--accent); display: block; font-size: .95rem; margin-bottom: 1px; }
-
-/* ═══════════════════════════════════════════════
-   ADMIN
-═══════════════════════════════════════════════ */
-.admin-banner {
-  background: linear-gradient(135deg, rgba(255,82,119,.1), rgba(232,255,71,.06));
-  border: 1px solid rgba(255,82,119,.25); border-radius: var(--r);
-  padding: 11px 14px; margin-bottom: 16px;
-  font-size: .85rem; color: var(--text2);
-  display: flex; align-items: center; gap: 8px;
-}
-.cfg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-@media(min-width:520px) { .cfg-grid { grid-template-columns: 1fr 1fr 1fr; } }
-
-/* ═══════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════ */
-#toast {
-  position: fixed; bottom: calc(72px + var(--safe-bottom) + 12px); left: 50%;
-  transform: translateX(-50%) translateY(10px);
-  background: var(--surface3); border: 1px solid var(--border2);
-  color: var(--text); padding: 12px 20px; border-radius: 999px;
-  font-size: .88rem; font-weight: 500; z-index: 9999;
-  opacity: 0; transition: opacity .25s, transform .25s;
-  pointer-events: none; box-shadow: 0 8px 32px rgba(0,0,0,.6);
-  white-space: nowrap; max-width: calc(100vw - 32px);
-}
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* ═══════════════════════════════════════════════
-   LOADING OVERLAY
-═══════════════════════════════════════════════ */
-#loading {
-  position: fixed; inset: 0; z-index: 9998;
-  background: var(--bg);
-  display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: 14px;
-  transition: opacity .4s;
-}
-#loading.hidden { opacity: 0; pointer-events: none; }
-.spinner {
-  width: 36px; height: 36px;
-  border: 3px solid var(--border2);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ═══════════════════════════════════════════════
-   MISC
-═══════════════════════════════════════════════ */
-.empty { text-align: center; padding: 48px 16px; color: var(--text2); }
-.empty-icon { font-size: 2.8rem; margin-bottom: 12px; }
-.empty p { font-size: .92rem; line-height: 1.5; }
-.tag {
-  font-family: 'JetBrains Mono', monospace; font-size: .68rem;
-  background: var(--surface2); padding: 2px 7px; border-radius: 5px; color: var(--text2);
-}
-.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
-.config-note {
-  background: rgba(232,255,71,.06); border: 1px solid rgba(232,255,71,.18);
-  border-radius: var(--r); padding: 12px 14px;
-  font-size: .82rem; color: var(--text2); margin-bottom: 16px; line-height: 1.5;
-}
-.config-note code {
-  font-family: 'JetBrains Mono', monospace; font-size: .8rem;
-  color: var(--accent); background: var(--accent-dim);
-  padding: 1px 6px; border-radius: 4px;
-}
-
-/* Desktop tweaks */
-@media(min-width: 680px) {
-  .header { padding: calc(var(--safe-top) + 16px) 32px 16px; }
-  .bottom-nav { display: none; }
-  .main { padding: 28px 24px 40px; }
-  /* Show top nav instead */
-  .top-nav { display: flex !important; }
-}
-
-/* Top nav (desktop only) */
-.top-nav {
-  display: none;
-  gap: 2px; padding: 0 32px;
-  background: rgba(13,13,20,.92);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-}
-.top-nav-btn {
-  padding: 12px 18px; border: none; background: none;
-  color: var(--text2); font-family: 'Instrument Sans', sans-serif;
-  font-size: .88rem; font-weight: 600; cursor: pointer;
-  border-bottom: 2px solid transparent; margin-bottom: -1px;
-  transition: all .2s; white-space: nowrap;
-}
-.top-nav-btn:hover { color: var(--text); }
-.top-nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-#top-admin-btn { display: none; }
+.timeline-bar{display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:14px}
+.tl-seg{flex:1;padding:7px 8px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);background:var(--surface2);border-right:1px solid var(--border);line-height:1.3}
+.tl-seg:last-child{border-right:none}
+.tl-active{background:var(--accent-dim);color:var(--accent);font-weight:700}
+.tl-vote{background:var(--blue-dim);color:var(--blue);font-weight:700}
+.tl-done{opacity:.45}
+.tl-result{background:rgba(255,82,119,.1);color:var(--accent2);font-weight:700}
+.countdown{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text2);white-space:nowrap}
+.countdown.urgent{color:var(--accent2)}
+/* CAPTIONS */
+.caption-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.caption-entry{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;display:flex;align-items:flex-start;gap:12px;transition:border-color .2s}
+.caption-entry.winner-1{border-color:var(--gold);background:rgba(255,201,64,.07)}
+.caption-entry.winner-2{border-color:var(--silver);background:rgba(200,200,224,.05)}
+.caption-entry.winner-3{border-color:var(--bronze);background:rgba(212,128,74,.06)}
+.caption-vote-btn{min-width:48px;min-height:52px;background:var(--surface3);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:600;transition:all .18s;flex-shrink:0;gap:1px;touch-action:manipulation}
+.caption-vote-btn:active:not(:disabled){transform:scale(.93)}
+.caption-vote-btn.votable:active{border-color:var(--accent);color:var(--accent)}
+.caption-vote-btn.voted{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.caption-vote-btn:disabled{opacity:.35;cursor:not-allowed}
+.caption-text{font-size:.95rem;line-height:1.55;flex:1}
+.caption-anon{font-size:.72rem;color:var(--text3);margin-top:4px;font-style:italic}
+.vote-medal{min-width:48px;text-align:center;font-size:1.4rem;line-height:1;display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
+.vote-medal span{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--text2)}
+.caption-submit-form{background:var(--surface2);border:1px dashed var(--border);border-radius:var(--r);padding:14px;margin-top:12px}
+.anon-notice{display:flex;align-items:center;gap:8px;background:var(--blue-dim);border:1px solid rgba(110,168,255,.2);border-radius:10px;padding:10px 13px;font-size:.82rem;color:var(--blue);margin-bottom:12px}
+/* FLAG BUTTON */
+.flag-btn{background:none;border:none;color:var(--text3);font-size:.75rem;cursor:pointer;padding:2px 6px;border-radius:6px;transition:color .2s;display:flex;align-items:center;gap:3px;margin-top:4px}
+.flag-btn:active{color:var(--accent2)}
+.flag-btn.flagged{color:var(--accent2)}
+/* SHARE BUTTON */
+.share-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text2);font-size:.82rem;font-weight:600;cursor:pointer;touch-action:manipulation;transition:all .2s}
+.share-btn:active{background:var(--surface3);color:var(--text)}
+/* RESULT OVERLAY */
+.result-overlay{position:relative;display:block;width:100%}
+.result-caption-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.92));padding:36px 18px 18px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;color:#fff;letter-spacing:.2px;line-height:1.35}
+/* LEADERBOARD */
+.lb-row{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);transition:background .15s}
+.lb-row:last-child{border-bottom:none}
+.lb-row:active{background:var(--surface2)}
+.lb-rank{font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;min-width:34px;text-align:center}
+.lb-rank.r1{color:var(--gold)}.lb-rank.r2{color:var(--silver)}.lb-rank.r3{color:var(--bronze)}
+.lb-handle{font-weight:600;flex:1;font-size:.95rem}
+.lb-sub{font-size:.75rem;color:var(--text2)}
+.lb-pts{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:600;color:var(--accent)}
+/* SUBMIT IMAGE */
+.source-tabs{display:flex;gap:8px;margin-bottom:12px}
+.source-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 8px;border-radius:var(--r);background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:.88rem;cursor:pointer;transition:all .18s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.source-tab:active{transform:scale(.96)}
+.source-tab.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.source-panel{display:none}
+.source-panel.active{display:block}
+.photo-drop-zone{border:2px dashed var(--border2);border-radius:var(--r);padding:32px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;-webkit-tap-highlight-color:transparent}
+.photo-drop-zone:active{border-color:var(--accent);background:var(--accent-dim)}
+.photo-drop-icon{font-size:2.4rem;margin-bottom:8px}
+.photo-drop-label{font-weight:600;font-size:.95rem;margin-bottom:4px}
+.photo-drop-sub{font-size:.78rem;color:var(--text2)}
+.submit-preview{width:100%;max-height:260px;object-fit:cover;border-radius:var(--r);border:1px solid var(--border);margin-top:14px;display:block}
+.upload-progress-bar{height:4px;background:var(--surface3);border-radius:2px;margin:14px 0 6px;overflow:hidden}
+.upload-progress-fill{height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .3s ease}
+.upload-progress-label{font-size:.78rem;color:var(--text2);font-family:'JetBrains Mono',monospace;text-align:center}
+.ai-generating{display:flex;align-items:center;gap:12px;padding:14px 0 2px;color:var(--text2);font-size:.88rem}
+.ai-pulse{width:20px;height:20px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(.7);opacity:.5}50%{transform:scale(1);opacity:1}}
+/* TIMING */
+.timing-row{display:flex;gap:10px;flex-wrap:wrap}
+.timing-chip{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 13px;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text2)}
+.timing-chip strong{color:var(--accent);display:block;font-size:.95rem;margin-bottom:1px}
+/* ADMIN */
+.admin-banner{background:linear-gradient(135deg,rgba(255,82,119,.1),rgba(232,255,71,.06));border:1px solid rgba(255,82,119,.25);border-radius:var(--r);padding:11px 14px;margin-bottom:16px;font-size:.85rem;color:var(--text2);display:flex;align-items:center;gap:8px}
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(min-width:520px){.cfg-grid{grid-template-columns:1fr 1fr 1fr}}
+/* NOTIFICATION PREFS */
+.notif-pref-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.notif-pref-row:last-child{border-bottom:none}
+.notif-pref-label{font-size:.9rem;font-weight:500}
+.notif-pref-sub{font-size:.75rem;color:var(--text2);margin-top:2px}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:var(--surface3);border-radius:12px;border:1px solid var(--border);cursor:pointer;transition:background .2s}
+.toggle input:checked + .toggle-track{background:var(--accent)}
+.toggle-track::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s}
+.toggle input:checked + .toggle-track::after{transform:translateX(20px)}
+/* SCHEDULE */
+.sched-item{display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px}
+.sched-time{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text2);white-space:nowrap;margin-top:2px}
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:520px){.modal-backdrop{align-items:center}}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:24px 20px calc(20px + var(--safe-bottom));width:100%;max-width:480px;animation:slideUp .25s ease}
+@media(min-width:520px){.modal{border-radius:var(--r-xl);padding:24px 24px}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;margin-bottom:16px}
+/* TOAST */
+#toast{position:fixed;bottom:calc(72px + var(--safe-bottom) + 12px);left:50%;transform:translateX(-50%) translateY(10px);background:var(--surface3);border:1px solid var(--border2);color:var(--text);padding:12px 20px;border-radius:999px;font-size:.88rem;font-weight:500;z-index:9999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.6);white-space:nowrap;max-width:calc(100vw - 32px)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* LOADING */
+#loading{position:fixed;inset:0;z-index:9998;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .4s}
+#loading.hidden{opacity:0;pointer-events:none}
+.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* MISC */
+.empty{text-align:center;padding:48px 16px;color:var(--text2)}
+.empty-icon{font-size:2.8rem;margin-bottom:12px}
+.empty p{font-size:.92rem;line-height:1.5}
+.tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;background:var(--surface2);padding:2px 7px;border-radius:5px;color:var(--text2)}
+.config-note{background:rgba(232,255,71,.06);border:1px solid rgba(232,255,71,.18);border-radius:var(--r);padding:12px 14px;font-size:.82rem;color:var(--text2);margin-bottom:16px;line-height:1.5}
+.config-note code{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--accent);background:var(--accent-dim);padding:1px 6px;border-radius:4px}
+@media(min-width:680px){.header{padding:calc(var(--safe-top) + 16px) 32px 16px}.bottom-nav{display:none}.main{padding:28px 24px 40px}.top-nav{display:flex!important}}
+.top-nav{display:none;gap:2px;padding:0 32px;background:rgba(13,13,20,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.top-nav-btn{padding:12px 18px;border:none;background:none;color:var(--text2);font-family:'Instrument Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;white-space:nowrap}
+.top-nav-btn:hover{color:var(--text)}
+.top-nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+#top-admin-btn{display:none}
 </style>
 </head>
 <body>
-
-<!-- LOADING -->
 <div id="loading">
   <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.8rem;color:var(--accent)">Caption<em style="color:var(--accent2);font-style:normal">Clash</em></div>
   <div class="spinner"></div>
 </div>
-
 <div id="app" style="display:none">
 
-  <!-- AUTH PAGE -->
-  <div id="auth-page" style="display:none">
-    <div class="auth-box">
-      <div class="auth-logo">Caption<em>Clash</em> ⚡</div>
-      <div class="auth-sub" id="auth-sub">Sign in to enter the arena</div>
-      <div id="login-form">
-        <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="you@example.com" autocomplete="email"></div>
-        <div class="form-group"><label>PIN</label><input type="password" id="login-pin" class="pin-input" maxlength="4" placeholder="••••" inputmode="numeric" autocomplete="current-password"></div>
-        <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In →</button>
-        <div class="auth-switch">No account? <a onclick="toggleAuth('register')">Register here</a></div>
-      </div>
-      <div id="register-form" style="display:none">
-        <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email"></div>
-        <div class="form-group"><label>Your Handle</label><input type="text" id="reg-handle" placeholder="wittyuser" maxlength="20" autocomplete="username"></div>
-        <div class="form-group"><label>4-Digit PIN</label><input type="password" id="reg-pin" class="pin-input" maxlength="4" placeholder="••••" inputmode="numeric" autocomplete="new-password"></div>
-        <div class="form-group"><label>Admin Password <span style="text-transform:none;font-weight:400">(optional)</span></label><input type="password" id="reg-admin" placeholder="Leave blank if not admin"></div>
-        <button class="btn btn-primary btn-full" onclick="doRegister()">Create Account →</button>
-        <div class="auth-switch">Have an account? <a onclick="toggleAuth('login')">Sign in</a></div>
-      </div>
+<!-- AUTH -->
+<div id="auth-page" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">Caption<em>Clash</em> ⚡</div>
+    <div class="auth-sub" id="auth-sub">Sign in to enter the arena</div>
+    <div id="login-form">
+      <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="you@example.com" autocomplete="email"></div>
+      <div class="form-group"><label>PIN</label><input type="password" id="login-pin" class="pin-input" maxlength="4" placeholder="••••" inputmode="numeric" autocomplete="current-password"></div>
+      <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In →</button>
+      <div class="auth-switch">No account? <a onclick="toggleAuth('register')">Register here</a></div>
+    </div>
+    <div id="register-form" style="display:none">
+      <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email"></div>
+      <div class="form-group"><label>Your Handle</label><input type="text" id="reg-handle" placeholder="wittyuser" maxlength="20" autocomplete="username"></div>
+      <div class="form-group"><label>4-Digit PIN</label><input type="password" id="reg-pin" class="pin-input" maxlength="4" placeholder="••••" inputmode="numeric" autocomplete="new-password"></div>
+      <div class="form-group"><label>Admin Password <span style="text-transform:none;font-weight:400">(optional)</span></label><input type="password" id="reg-admin" placeholder="Leave blank if not admin"></div>
+      <button class="btn btn-primary btn-full" onclick="doRegister()">Create Account →</button>
+      <div class="auth-switch">Have an account? <a onclick="toggleAuth('login')">Sign in</a></div>
     </div>
   </div>
+</div>
 
-  <!-- MAIN APP -->
-  <div id="main-app" style="display:none">
-    <header class="header">
-      <a class="logo" href="#">Caption<em>Clash</em> ⚡</a>
-      <div class="header-right">
-        <div class="user-chip" onclick="doLogout()">
-          <div class="avatar" id="user-avatar">?</div>
-          <span id="user-handle-display" style="font-size:.85rem;font-weight:600;"></span>
+<!-- MAIN APP -->
+<div id="main-app" style="display:none">
+  <header class="header">
+    <a class="logo" href="#">Caption<em>Clash</em> ⚡</a>
+    <div class="header-right">
+      <button class="btn btn-ghost btn-sm" id="notif-btn" onclick="showPage('notifications')" style="padding:8px 12px;min-height:36px;display:none">🔔</button>
+      <div class="user-chip" onclick="doLogout()">
+        <div class="avatar" id="user-avatar">?</div>
+        <span id="user-handle-display" style="font-size:.85rem;font-weight:600;"></span>
+      </div>
+    </div>
+  </header>
+  <nav class="top-nav">
+    <button class="top-nav-btn active" onclick="showPage('contests')" data-tab="contests">🖼 Contests</button>
+    <button class="top-nav-btn" onclick="showPage('submit')" data-tab="submit">+ Submit</button>
+    <button class="top-nav-btn" onclick="showPage('leaderboard')" data-tab="leaderboard">🏆 Leaderboard</button>
+    <button class="top-nav-btn" onclick="showPage('notifications')" data-tab="notifications">🔔 Alerts</button>
+    <button class="top-nav-btn" id="top-admin-btn" onclick="showPage('admin')" data-tab="admin">⚙️ Admin</button>
+  </nav>
+
+  <div class="main">
+
+    <!-- CONTESTS PAGE -->
+    <div class="page active" id="page-contests">
+      <div class="section-head">
+        <h2>Contests</h2>
+        <button class="btn btn-ghost btn-sm" onclick="renderContests()">↻</button>
+      </div>
+      <div id="live-indicator" style="display:none;font-size:.75rem;color:var(--accent3);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--accent3);animation:pulse 1.5s infinite;display:inline-block"></span>Live updates on
+      </div>
+      <div id="contests-list"><div class="empty"><div class="spinner" style="margin:0 auto"></div></div></div>
+    </div>
+
+    <!-- SUBMIT PAGE -->
+    <div class="page" id="page-submit">
+      <div class="section-head"><h2>Submit Image</h2></div>
+      <div id="submit-timing-notice"></div>
+      <div class="card">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Contest Title</label>
+          <input type="text" id="si-title" placeholder="Give this round a name">
         </div>
       </div>
-    </header>
-
-    <!-- Desktop top nav -->
-    <nav class="top-nav">
-      <button class="top-nav-btn active" onclick="showPage('contests')" data-tab="contests">🖼 Contests</button>
-      <button class="top-nav-btn" onclick="showPage('submit')" data-tab="submit">+ Submit</button>
-      <button class="top-nav-btn" onclick="showPage('leaderboard')" data-tab="leaderboard">🏆 Leaderboard</button>
-      <button class="top-nav-btn" id="top-admin-btn" onclick="showPage('admin')" data-tab="admin">⚙️ Admin</button>
-    </nav>
-
-    <div class="main">
-
-      <!-- CONTESTS -->
-      <div class="page active" id="page-contests">
-        <div class="section-head">
-          <h2>Contests</h2>
-          <button class="btn btn-ghost btn-sm" onclick="renderContests()">↻ Refresh</button>
-        </div>
-        <div id="contests-list"><div class="empty"><div class="spinner" style="margin:0 auto"></div></div></div>
+      <div class="source-tabs">
+        <button class="source-tab active" onclick="switchSource('photo')" id="stab-photo"><span>📷</span> Photo</button>
+        <button class="source-tab" onclick="switchSource('url')" id="stab-url"><span>🔗</span> URL</button>
+        <button class="source-tab" onclick="switchSource('ai')" id="stab-ai"><span>✨</span> AI</button>
       </div>
-
-      <!-- SUBMIT -->
-      <div class="page" id="page-submit">
-        <div class="section-head"><h2>Submit Image</h2></div>
-        <div id="submit-timing-notice"></div>
+      <div class="source-panel active" id="src-photo">
         <div class="card">
-          <div class="form-group"><label>Contest Title</label><input type="text" id="si-title" placeholder="Give this round a name"></div>
-          <div class="form-group">
+          <div class="photo-drop-zone" onclick="document.getElementById('photo-file-input').click()">
+            <div class="photo-drop-icon">📷</div>
+            <div class="photo-drop-label">Tap to choose photo</div>
+            <div class="photo-drop-sub">Camera roll or take a new photo</div>
+            <input type="file" id="photo-file-input" accept="image/*" onchange="handlePhotoSelect(event)" style="display:none">
+          </div>
+          <img id="photo-preview" class="submit-preview" style="display:none" alt="preview">
+          <div id="photo-upload-progress" style="display:none">
+            <div class="upload-progress-bar"><div class="upload-progress-fill" id="upload-fill"></div></div>
+            <div class="upload-progress-label" id="upload-label">Uploading…</div>
+          </div>
+        </div>
+      </div>
+      <div class="source-panel" id="src-url">
+        <div class="card">
+          <div class="form-group" style="margin-bottom:8px">
             <label>Image URL</label>
-            <input type="url" id="si-url" placeholder="https://i.imgur.com/abc123.jpg" oninput="previewUrl()" autocomplete="off">
-            <img id="url-preview" class="img-url-preview" alt="preview">
-            <div style="font-size:.75rem;color:var(--text2);margin-top:8px;">
-              💡 Use a public image host: <strong>Imgur</strong>, <strong>Cloudinary</strong>, or paste any public image URL. Images must be accessible to all users.
-            </div>
+            <input type="url" id="si-url" placeholder="https://i.imgur.com/abc123.jpg" oninput="previewUrl()" autocomplete="off" inputmode="url">
           </div>
-          <button class="btn btn-primary btn-full" onclick="submitImage()" id="submit-btn">Submit to Contest →</button>
+          <img id="url-preview" class="submit-preview" style="display:none" alt="preview">
+          <div id="url-warn" style="display:none;margin-top:10px;padding:10px 13px;border-radius:10px;background:rgba(255,82,119,.1);border:1px solid rgba(255,82,119,.25);font-size:.8rem;color:#ff8aa0;line-height:1.5;"></div>
+          <div style="font-size:.74rem;color:var(--text2);margin-top:10px;line-height:1.5;">💡 Paste a <strong>direct</strong> image link (.jpg/.png/.gif). <strong>Imgur tip:</strong> open image → long-press → "Copy Image Address"</div>
+        </div>
+      </div>
+      <div class="source-panel" id="src-ai">
+        <div class="card">
+          <div class="form-group">
+            <label>Describe the image</label>
+            <textarea id="ai-prompt" rows="3" placeholder="A cat wearing a tiny cowboy hat at a rodeo, golden hour lighting…"></textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Your Anthropic API Key <span style="text-transform:none;font-weight:400">(optional)</span></label>
+            <input type="password" id="ai-user-key" placeholder="sk-ant-… leave blank for shared key" autocomplete="off" spellcheck="false">
+          </div>
+          <button class="btn btn-ghost btn-full" id="ai-gen-btn" onclick="generateAiImage()">✨ Generate Image</button>
+          <div id="ai-status" style="display:none"><div class="ai-generating"><div class="ai-pulse"></div><span id="ai-status-text">Generating…</span></div></div>
+          <img id="ai-preview" class="submit-preview" style="display:none;margin-top:12px" alt="AI preview">
         </div>
       </div>
 
-      <!-- LEADERBOARD -->
-      <div class="page" id="page-leaderboard">
-        <div class="section-head"><h2>Leaderboard 🏆</h2></div>
-        <div class="card" style="padding:0;overflow:hidden"><div id="leaderboard-list"></div></div>
-      </div>
-
-      <!-- ADMIN -->
-      <div class="page" id="page-admin">
-        <div class="section-head"><h2>Admin ⚙️</h2></div>
-        <div class="admin-banner">🔐 Admin mode — you control all contest timing.</div>
-
+      <!-- Schedule option (admin only) -->
+      <div id="schedule-section" style="display:none">
         <div class="card">
-          <div class="card-title">⏱ Global Contest Timing</div>
-          <div class="config-note">
-            These windows apply to <strong>every image</strong> from the moment it's submitted.
-            Changes take effect for <em>new</em> contests only — existing contests use the timing that was active when they were created. Store your Supabase keys in <code>supabase-config.js</code>.
+          <div class="card-title">📅 Schedule (optional)</div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Publish At <span style="text-transform:none;font-weight:400">(leave blank to publish immediately)</span></label>
+            <input type="datetime-local" id="si-schedule">
           </div>
-          <div class="cfg-grid">
-            <div class="form-group" style="margin-bottom:0">
-              <label>Caption Window (hrs)</label>
-              <input type="number" id="cfg-caption" min="0.5" max="720" step="0.5">
-              <div style="font-size:.72rem;color:var(--text2);margin-top:4px;">How long captions are accepted</div>
-            </div>
-            <div class="form-group" style="margin-bottom:0">
-              <label>Voting Window (hrs)</label>
-              <input type="number" id="cfg-vote" min="0.5" max="720" step="0.5">
-              <div style="font-size:.72rem;color:var(--text2);margin-top:4px;">How long voting stays open</div>
-            </div>
-            <div class="form-group" style="margin-bottom:0">
-              <label>Auto-Finalize</label>
-              <select id="cfg-auto">
-                <option value="0">No — manual reveal</option>
-                <option value="1">Yes — auto-reveal</option>
-              </select>
-              <div style="font-size:.72rem;color:var(--text2);margin-top:4px;">Auto-reveal after voting ends</div>
-            </div>
-          </div>
-          <div style="margin-top:16px;"><button class="btn btn-primary" onclick="saveAdminConfig()">Save Settings ✓</button></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">All Contests</div>
-          <div id="admin-contests-list"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Registered Users</div>
-          <div id="admin-users-list"></div>
         </div>
       </div>
 
-    </div><!-- /main -->
+      <button class="btn btn-primary btn-full" onclick="submitImage()" id="submit-btn" style="margin-top:4px;">Submit to Contest →</button>
+    </div>
 
-    <!-- BOTTOM NAV (mobile) -->
-    <nav class="bottom-nav">
-      <button class="bnav-btn active" onclick="showPage('contests')" data-bnav="contests">
-        <span class="icon">🖼</span>Contests
-      </button>
-      <button class="bnav-btn" onclick="showPage('submit')" data-bnav="submit">
-        <span class="icon">➕</span>Submit
-      </button>
-      <button class="bnav-btn" onclick="showPage('leaderboard')" data-bnav="leaderboard">
-        <span class="icon">🏆</span>Scores
-      </button>
-      <button class="bnav-btn" id="bnav-admin" onclick="showPage('admin')" data-bnav="admin">
-        <span class="icon">⚙️</span>Admin
-      </button>
-    </nav>
+    <!-- LEADERBOARD PAGE -->
+    <div class="page" id="page-leaderboard">
+      <div class="section-head"><h2>Leaderboard 🏆</h2></div>
+      <div class="card" style="padding:0;overflow:hidden"><div id="leaderboard-list"></div></div>
+    </div>
 
-  </div><!-- /main-app -->
+    <!-- NOTIFICATIONS PAGE -->
+    <div class="page" id="page-notifications">
+      <div class="section-head"><h2>🔔 Notifications</h2></div>
+      <div id="push-status-card" class="card">
+        <div class="card-title">Push Notifications</div>
+        <div id="push-status-msg" style="color:var(--text2);font-size:.88rem;margin-bottom:14px;line-height:1.5;"></div>
+        <button class="btn btn-primary" id="push-enable-btn" onclick="enablePush()" style="display:none">Enable Notifications 🔔</button>
+        <button class="btn btn-ghost btn-sm" id="push-disable-btn" onclick="disablePush()" style="display:none">Disable Notifications</button>
+      </div>
+      <div class="card" id="notif-prefs-card" style="display:none">
+        <div class="card-title">What to notify me about</div>
+        <div class="notif-pref-row">
+          <div><div class="notif-pref-label">Results revealed</div><div class="notif-pref-sub">When a contest I entered shows winners</div></div>
+          <label class="toggle"><input type="checkbox" id="pref-results" onchange="saveNotifPrefs()"><div class="toggle-track"></div></label>
+        </div>
+        <div class="notif-pref-row">
+          <div><div class="notif-pref-label">Voting opens</div><div class="notif-pref-sub">When a contest I entered moves to voting</div></div>
+          <label class="toggle"><input type="checkbox" id="pref-voting" onchange="saveNotifPrefs()"><div class="toggle-track"></div></label>
+        </div>
+        <div class="notif-pref-row">
+          <div><div class="notif-pref-label">New contest posted</div><div class="notif-pref-sub">When any new image is submitted</div></div>
+          <label class="toggle"><input type="checkbox" id="pref-new" onchange="saveNotifPrefs()"><div class="toggle-track"></div></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN PAGE -->
+    <div class="page" id="page-admin">
+      <div class="section-head"><h2>Admin ⚙️</h2></div>
+      <div class="admin-banner">🔐 Admin mode — you control all contest timing.</div>
+
+      <div class="card">
+        <div class="card-title">⏱ Global Timing</div>
+        <div class="cfg-grid">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Caption Window (hrs)</label>
+            <input type="number" id="cfg-caption" min="0.5" max="720" step="0.5">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Voting Window (hrs)</label>
+            <input type="number" id="cfg-vote" min="0.5" max="720" step="0.5">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Auto-Finalize</label>
+            <select id="cfg-auto"><option value="0">Manual reveal</option><option value="1">Auto-reveal</option></select>
+          </div>
+        </div>
+        <div style="margin-top:16px;"><button class="btn btn-primary" onclick="saveAdminConfig()">Save ✓</button></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📅 Scheduled Contests</div>
+        <div id="scheduled-list"><div style="color:var(--text2);font-size:.85rem;">Loading…</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🚩 Flagged Captions</div>
+        <div id="flagged-list"><div style="color:var(--text2);font-size:.85rem;">Loading…</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">All Contests</div>
+        <div id="admin-contests-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Registered Users</div>
+        <div id="admin-users-list"></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="bnav-btn active" onclick="showPage('contests')" data-bnav="contests"><span class="icon">🖼</span>Contests</button>
+    <button class="bnav-btn" onclick="showPage('submit')" data-bnav="submit"><span class="icon">➕</span>Submit</button>
+    <button class="bnav-btn" onclick="showPage('leaderboard')" data-bnav="leaderboard"><span class="icon">🏆</span>Scores</button>
+    <button class="bnav-btn" onclick="showPage('notifications')" data-bnav="notifications"><span class="icon">🔔</span>Alerts<span class="notif-dot" id="notif-dot"></span></button>
+    <button class="bnav-btn" id="bnav-admin" onclick="showPage('admin')" data-bnav="admin"><span class="icon">⚙️</span>Admin</button>
+  </nav>
+</div><!-- /main-app -->
 </div><!-- /app -->
 
-<div id="toast"></div>
+<!-- FLAG MODAL -->
+<div id="flag-modal" class="modal-backdrop" style="display:none" onclick="closeFlagModal(event)">
+  <div class="modal">
+    <div class="modal-title">🚩 Flag Caption</div>
+    <p style="color:var(--text2);font-size:.88rem;margin-bottom:16px;line-height:1.5;">This caption will be hidden from everyone until an admin reviews it. Please give a brief reason.</p>
+    <div class="form-group">
+      <label>Reason (optional)</label>
+      <textarea id="flag-reason" rows="2" placeholder="Offensive, spam, off-topic…"></textarea>
+    </div>
+    <input type="hidden" id="flag-caption-id">
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-danger btn-full" onclick="submitFlag()">Submit Flag</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('flag-modal').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</div>
 
-<!-- ═══════════════════════════════════════════
-  SUPABASE CONFIG — edit supabase-config.js
-════════════════════════════════════════════ -->
+<!-- SHARE MODAL -->
+<div id="share-modal" class="modal-backdrop" style="display:none" onclick="closeShareModal(event)">
+  <div class="modal">
+    <div class="modal-title">🎉 Share Results</div>
+    <canvas id="share-canvas" style="width:100%;border-radius:var(--r);margin-bottom:16px;display:block"></canvas>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="downloadShareCard()" style="flex:1">⬇ Download Image</button>
+      <button class="btn btn-ghost" onclick="copyShareLink()" style="flex:1">🔗 Copy Link</button>
+    </div>
+    <input type="hidden" id="share-contest-id">
+  </div>
+</div>
+
+<div id="toast"></div>
 <script src="supabase-config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-// ════════════════════════════════════════════
-//  SUPABASE CLIENT
-// ════════════════════════════════════════════
+// ════════════════════════════════════════
+//  SUPABASE + STATE
+// ════════════════════════════════════════
 let sb;
-try {
-  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-} catch(e) {
-  console.error('Supabase config missing. See supabase-config.js');
-}
+try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+catch(e) { console.error('Supabase config missing'); }
 
-// ════════════════════════════════════════════
-//  LOCAL CONFIG (admin timing prefs)
-//  Stored in Supabase `config` table, cached locally
-// ════════════════════════════════════════════
 const ADMIN_PASS = window.ADMIN_PASSWORD || "caption2024";
+let cfg = { captionHrs:48, voteHrs:24, autoFinalize:false };
+let currentUser = null;
+let realtimeChannel = null;
+let schedulerTimer = null;
 
-let cfg = { captionHrs: 48, voteHrs: 24, autoFinalize: false };
-let currentUser = null; // { email, handle, isAdmin }
-
-// ════════════════════════════════════════════
-//  PHASE HELPER
-// ════════════════════════════════════════════
-function getPhase(contest, now) {
-  // Use the timing that was snapshotted when the contest was created
-  const captionMs  = (contest.caption_hrs ?? cfg.captionHrs) * 3600000;
-  const voteMs     = (contest.vote_hrs    ?? cfg.voteHrs)    * 3600000;
-  const created    = new Date(contest.created_at).getTime();
+// ════════════════════════════════════════
+//  PHASE
+// ════════════════════════════════════════
+function getPhase(c, now) {
+  const captionMs  = (c.caption_hrs ?? cfg.captionHrs) * 3600000;
+  const voteMs     = (c.vote_hrs    ?? cfg.voteHrs)    * 3600000;
+  const created    = new Date(c.created_at).getTime();
   const captionEnd = created + captionMs;
   const voteEnd    = captionEnd + voteMs;
-  if (contest.finalized)    return { phase:'revealed', captionEnd, voteEnd };
-  if (now < captionEnd)     return { phase:'caption',  captionEnd, voteEnd, msLeft: captionEnd - now };
-  if (now < voteEnd)        return { phase:'voting',   captionEnd, voteEnd, msLeft: voteEnd - now };
-  return                           { phase:'closed',   captionEnd, voteEnd };
+  if (c.finalized)      return { phase:'revealed', captionEnd, voteEnd };
+  if (now < captionEnd) return { phase:'caption',  captionEnd, voteEnd, msLeft:captionEnd-now };
+  if (now < voteEnd)    return { phase:'voting',   captionEnd, voteEnd, msLeft:voteEnd-now };
+  return                       { phase:'closed',   captionEnd, voteEnd };
 }
 
-// ════════════════════════════════════════════
+// ════════════════════════════════════════
 //  INIT
-// ════════════════════════════════════════════
+// ════════════════════════════════════════
 async function init() {
-  // Load cached session
   const saved = localStorage.getItem('cc_user');
-  if (saved) {
-    try { currentUser = JSON.parse(saved); } catch {}
-  }
-
-  // Load config from Supabase
+  if (saved) { try { currentUser = JSON.parse(saved); } catch {} }
   await loadConfig();
-
   hideLoading();
-
-  if (currentUser) {
-    showApp();
-  } else {
-    showAuthPage();
+  if (currentUser) showApp(); else showAuthPage();
+}
+function hideLoading(){const el=document.getElementById('loading');el.classList.add('hidden');setTimeout(()=>el.style.display='none',500)}
+function showAuthPage(){document.getElementById('app').style.display='';document.getElementById('auth-page').style.display='';document.getElementById('main-app').style.display='none'}
+function showApp(){
+  document.getElementById('app').style.display='';
+  document.getElementById('auth-page').style.display='none';
+  document.getElementById('main-app').style.display='';
+  document.getElementById('user-handle-display').textContent=currentUser.handle;
+  document.getElementById('user-avatar').textContent=currentUser.handle[0].toUpperCase();
+  if(currentUser.isAdmin){
+    document.getElementById('bnav-admin').style.display='';
+    document.getElementById('top-admin-btn').style.display='';
+    document.getElementById('schedule-section').style.display='';
   }
-}
-
-function hideLoading() {
-  const el = document.getElementById('loading');
-  el.classList.add('hidden');
-  setTimeout(() => el.style.display='none', 500);
-}
-
-function showAuthPage() {
-  document.getElementById('app').style.display = '';
-  document.getElementById('auth-page').style.display = '';
-  document.getElementById('main-app').style.display = 'none';
-}
-
-function showApp() {
-  document.getElementById('app').style.display = '';
-  document.getElementById('auth-page').style.display = 'none';
-  document.getElementById('main-app').style.display = '';
-  document.getElementById('user-handle-display').textContent = currentUser.handle;
-  document.getElementById('user-avatar').textContent = currentUser.handle[0].toUpperCase();
-  if (currentUser.isAdmin) {
-    document.getElementById('bnav-admin').style.display = '';
-    document.getElementById('top-admin-btn').style.display = '';
-  }
+  startRealtime();
+  startSchedulerPoll();
+  loadNotifStatus();
   showPage('contests');
 }
 
-// ════════════════════════════════════════════
+// ════════════════════════════════════════
 //  AUTH
-// ════════════════════════════════════════════
-function toggleAuth(mode) {
-  const showLogin = mode === 'login';
-  document.getElementById('login-form').style.display    = showLogin ? '' : 'none';
-  document.getElementById('register-form').style.display = showLogin ? 'none' : '';
-  document.getElementById('auth-sub').textContent = showLogin
-    ? 'Sign in to enter the arena' : 'Create your account 🎭';
-}
-
-async function doLogin() {
-  const email = v('login-email').trim().toLowerCase();
-  const pin   = v('login-pin').trim();
-  if (!email||!pin) return toast('Enter your email and PIN');
-  try {
-    const { data, error } = await sb.from('users')
-      .select('email,handle,pin,is_admin')
-      .eq('email', email).single();
-    if (error || !data) return toast('No account found — register first');
-    if (data.pin !== pin) return toast('Wrong PIN');
-    currentUser = { email: data.email, handle: data.handle, isAdmin: data.is_admin };
-    localStorage.setItem('cc_user', JSON.stringify(currentUser));
+// ════════════════════════════════════════
+function toggleAuth(m){const sl=m==='login';document.getElementById('login-form').style.display=sl?'':'none';document.getElementById('register-form').style.display=sl?'none':'';document.getElementById('auth-sub').textContent=sl?'Sign in to enter the arena':'Create your account 🎭'}
+async function doLogin(){
+  const email=v('login-email').trim().toLowerCase(),pin=v('login-pin').trim();
+  if(!email||!pin)return toast('Enter your email and PIN');
+  try{
+    const{data,error}=await sb.from('users').select('email,handle,pin,is_admin').eq('email',email).maybeSingle();
+    if(error)return toast('Error: '+error.message);
+    if(!data)return toast('No account found — register first');
+    if(data.pin!==pin)return toast('Wrong PIN');
+    currentUser={email:data.email,handle:data.handle,isAdmin:data.is_admin};
+    localStorage.setItem('cc_user',JSON.stringify(currentUser));
     showApp();
-  } catch(e) { toast('Error: ' + e.message); }
+  }catch(e){toast('Error: '+e.message)}
 }
-
-async function doRegister() {
-  const email  = v('reg-email').trim().toLowerCase();
-  const handle = v('reg-handle').trim();
-  const pin    = v('reg-pin').trim();
-  const ap     = v('reg-admin').trim();
-  if (!email||!handle||!pin) return toast('Fill in all fields');
-  if (!/^\d{4}$/.test(pin))  return toast('PIN must be exactly 4 digits');
-  if (!/^[a-zA-Z0-9_]+$/.test(handle)) return toast('Handle: letters, numbers, _ only');
-  const isAdmin = ap === ADMIN_PASS;
-  try {
-    const { error } = await sb.from('users').insert({
-      email, handle, pin, is_admin: isAdmin
-    });
-    if (error) {
-      if (error.code === '23505') return toast('Email or handle already taken');
-      return toast('Error: ' + error.message);
-    }
-    currentUser = { email, handle, isAdmin };
-    localStorage.setItem('cc_user', JSON.stringify(currentUser));
-    toast(isAdmin ? 'Welcome, admin! 🎉' : 'Account created! ⚡');
+async function doRegister(){
+  const email=v('reg-email').trim().toLowerCase(),handle=v('reg-handle').trim(),pin=v('reg-pin').trim(),ap=v('reg-admin').trim();
+  if(!email||!handle||!pin)return toast('Fill in all fields');
+  if(!/^\d{4}$/.test(pin))return toast('PIN must be exactly 4 digits');
+  if(!/^[a-zA-Z0-9_]+$/.test(handle))return toast('Handle: letters, numbers, _ only');
+  const isAdmin=ap===ADMIN_PASS;
+  try{
+    const{error}=await sb.from('users').insert({email,handle,pin,is_admin:isAdmin});
+    if(error){if(error.code==='23505')return toast('Email or handle already taken');return toast('Error: '+error.message)}
+    currentUser={email,handle,isAdmin};
+    localStorage.setItem('cc_user',JSON.stringify(currentUser));
+    toast(isAdmin?'Welcome, admin! 🎉':'Account created! ⚡');
     showApp();
-  } catch(e) { toast('Error: ' + e.message); }
+  }catch(e){toast('Error: '+e.message)}
 }
-
-function doLogout() {
-  currentUser = null;
-  localStorage.removeItem('cc_user');
-  document.getElementById('main-app').style.display = 'none';
-  document.getElementById('auth-page').style.display = '';
+function doLogout(){
+  stopRealtime();
+  if(schedulerTimer)clearInterval(schedulerTimer);
+  currentUser=null;localStorage.removeItem('cc_user');
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('auth-page').style.display='';
   toggleAuth('login');
 }
 
-// ════════════════════════════════════════════
+// ════════════════════════════════════════
 //  NAVIGATION
-// ════════════════════════════════════════════
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.bnav-btn, .top-nav-btn').forEach(b => b.classList.remove('active'));
-  const pg = document.getElementById('page-'+id);
-  if (pg) pg.classList.add('active');
-  document.querySelectorAll(`[data-bnav="${id}"], [data-tab="${id}"]`)
-    .forEach(b => b.classList.add('active'));
-  if (id==='contests')    renderContests();
-  if (id==='leaderboard') renderLeaderboard();
-  if (id==='admin')       renderAdmin();
-  if (id==='submit')      renderSubmitNotice();
+// ════════════════════════════════════════
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn,.top-nav-btn').forEach(b=>b.classList.remove('active'));
+  const pg=document.getElementById('page-'+id);if(pg)pg.classList.add('active');
+  document.querySelectorAll(`[data-bnav="${id}"],[data-tab="${id}"]`).forEach(b=>b.classList.add('active'));
+  if(id==='contests')renderContests();
+  if(id==='leaderboard')renderLeaderboard();
+  if(id==='admin')renderAdmin();
+  if(id==='submit')renderSubmitNotice();
+  if(id==='notifications')renderNotifPage();
   window.scrollTo(0,0);
 }
 
-// ════════════════════════════════════════════
+// ════════════════════════════════════════
 //  CONFIG
-// ════════════════════════════════════════════
-async function loadConfig() {
-  try {
-    const { data } = await sb.from('config').select('*').eq('id', 1).single();
-    if (data) cfg = { captionHrs: data.caption_hrs, voteHrs: data.vote_hrs, autoFinalize: data.auto_finalize };
-  } catch {}
+// ════════════════════════════════════════
+async function loadConfig(){try{const{data}=await sb.from('config').select('*').eq('id',1).single();if(data)cfg={captionHrs:data.caption_hrs,voteHrs:data.vote_hrs,autoFinalize:data.auto_finalize}}catch{}}
+async function saveAdminConfig(){
+  const ch=parseFloat(v('cfg-caption')),vh=parseFloat(v('cfg-vote')),af=document.getElementById('cfg-auto').value==='1';
+  if(isNaN(ch)||ch<=0)return toast('Enter a valid caption window');
+  if(isNaN(vh)||vh<=0)return toast('Enter a valid voting window');
+  cfg={captionHrs:ch,voteHrs:vh,autoFinalize:af};
+  try{await sb.from('config').upsert({id:1,caption_hrs:ch,vote_hrs:vh,auto_finalize:af});toast('Timing saved ✅');renderAdmin()}
+  catch(e){toast('Error: '+e.message)}
 }
+function loadCfgIntoForm(){document.getElementById('cfg-caption').value=cfg.captionHrs;document.getElementById('cfg-vote').value=cfg.voteHrs;document.getElementById('cfg-auto').value=cfg.autoFinalize?'1':'0'}
 
-async function saveAdminConfig() {
-  const ch = parseFloat(v('cfg-caption'));
-  const vh = parseFloat(v('cfg-vote'));
-  const af = document.getElementById('cfg-auto').value === '1';
-  if (isNaN(ch)||ch<=0) return toast('Enter a valid caption window');
-  if (isNaN(vh)||vh<=0) return toast('Enter a valid voting window');
-  cfg = { captionHrs:ch, voteHrs:vh, autoFinalize:af };
-  try {
-    await sb.from('config').upsert({ id:1, caption_hrs:ch, vote_hrs:vh, auto_finalize:af });
-    toast('Timing settings saved ✅');
-    renderAdmin();
-  } catch(e) { toast('Error: '+e.message); }
+// ════════════════════════════════════════
+//  SUBMIT IMAGE
+// ════════════════════════════════════════
+let submitState={source:'photo',finalUrl:null};
+function switchSource(src){
+  submitState.source=src;submitState.finalUrl=null;
+  document.querySelectorAll('.source-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('stab-'+src).classList.add('active');
+  document.querySelectorAll('.source-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('src-'+src).classList.add('active');
 }
-
-function loadCfgIntoForm() {
-  document.getElementById('cfg-caption').value = cfg.captionHrs;
-  document.getElementById('cfg-vote').value    = cfg.voteHrs;
-  document.getElementById('cfg-auto').value    = cfg.autoFinalize ? '1' : '0';
+function renderSubmitNotice(){
+  document.getElementById('submit-timing-notice').innerHTML=`<div class="card" style="margin-bottom:14px;"><div class="card-title" style="margin-bottom:10px;">📋 Active Timing</div><div class="timing-row"><div class="timing-chip"><strong>${cfg.captionHrs}h</strong>Caption</div><div class="timing-chip"><strong>${cfg.voteHrs}h</strong>Voting</div><div class="timing-chip"><strong>${cfg.autoFinalize?'Auto':'Manual'}</strong>Finalize</div></div></div>`;
 }
-
-// ════════════════════════════════════════════
-//  SUBMIT IMAGE (URL only — shared across all devices)
-// ════════════════════════════════════════════
-function renderSubmitNotice() {
-  document.getElementById('submit-timing-notice').innerHTML = `
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-title" style="margin-bottom:10px;">📋 Active Timing</div>
-      <div class="timing-row">
-        <div class="timing-chip"><strong>${cfg.captionHrs}h</strong>Caption window</div>
-        <div class="timing-chip"><strong>${cfg.voteHrs}h</strong>Voting window</div>
-        <div class="timing-chip"><strong>${cfg.autoFinalize?'Auto':'Manual'}</strong>Finalize</div>
-      </div>
-    </div>`;
+async function handlePhotoSelect(e){
+  const file=e.target.files[0];if(!file)return;
+  const prev=document.getElementById('photo-preview');
+  prev.src=URL.createObjectURL(file);prev.style.display='block';submitState.finalUrl=null;
+  const prog=document.getElementById('photo-upload-progress'),fill=document.getElementById('upload-fill'),label=document.getElementById('upload-label');
+  prog.style.display='block';fill.style.width='10%';label.textContent='Uploading photo…';
+  try{
+    const ext=file.name.split('.').pop()||'jpg';
+    const path=`contest-images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    let pct=10;const tick=setInterval(()=>{pct=Math.min(pct+12,85);fill.style.width=pct+'%'},300);
+    const{error}=await sb.storage.from('contest-images').upload(path,file,{cacheControl:'3600',upsert:false});
+    clearInterval(tick);
+    if(error){prog.style.display='none';toast('Upload failed: '+error.message);return}
+    const{data:{publicUrl}}=sb.storage.from('contest-images').getPublicUrl(path);
+    fill.style.width='100%';label.textContent='Upload complete ✓';submitState.finalUrl=publicUrl;
+    setTimeout(()=>{prog.style.display='none'},1200);
+  }catch(err){prog.style.display='none';toast('Upload error: '+err.message)}
 }
-
-function previewUrl() {
-  const url = v('si-url').trim();
-  const prev = document.getElementById('url-preview');
-  if (url) { prev.src = url; prev.style.display='block'; }
-  else prev.style.display='none';
+function resolveImgurUrl(url){
+  if(/^https?:\/\/i\.imgur\.com\//i.test(url))return{ok:true,url};
+  if(/imgur\.com\/(gallery|a)\//i.test(url))return{ok:false,hint:'That is an Imgur gallery page. Open it in your browser, tap the image, then long-press → Copy Image Link to get a direct URL like https://i.imgur.com/AbCdEfG.jpg'};
+  const m=url.match(/imgur\.com\/([A-Za-z0-9]+)$/);
+  if(m)return{ok:true,url:'https://i.imgur.com/'+m[1]+'.jpg'};
+  return{ok:true,url};
 }
-
-async function submitImage() {
-  const title = v('si-title').trim();
-  const url   = v('si-url').trim();
-  if (!title) return toast('Give this contest a title');
-  if (!url)   return toast('Enter an image URL');
-  if (!url.match(/^https?:\/\/.+/)) return toast('Enter a valid https:// URL');
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = true; btn.textContent = 'Submitting…';
-  try {
-    const { error } = await sb.from('contests').insert({
-      title, img_url: url,
-      submitted_by: currentUser.email,
-      caption_hrs: cfg.captionHrs,
-      vote_hrs: cfg.voteHrs,
-      finalized: false
-    });
-    if (error) { toast('Error: '+error.message); return; }
-    document.getElementById('si-title').value = '';
-    document.getElementById('si-url').value   = '';
-    document.getElementById('url-preview').style.display = 'none';
-    toast('Image submitted! The clock starts now 🎭');
+function previewUrl(){
+  const raw=v('si-url').trim(),warn=document.getElementById('url-warn'),prev=document.getElementById('url-preview');
+  if(!raw){prev.style.display='none';warn.style.display='none';submitState.finalUrl=null;return}
+  const resolved=resolveImgurUrl(raw);
+  if(!resolved.ok){prev.style.display='none';warn.textContent='⚠ '+resolved.hint;warn.style.display='block';submitState.finalUrl=null;return}
+  warn.style.display='none';
+  if(resolved.url!==raw)document.getElementById('si-url').value=resolved.url;
+  prev.src=resolved.url;prev.style.display='block';submitState.finalUrl=resolved.url;
+  prev.onerror=()=>{warn.textContent='⚠ Image could not load. Make sure the URL is a direct link to an image file.';warn.style.display='block';prev.style.display='none';submitState.finalUrl=null};
+  prev.onload=()=>{warn.style.display='none'};
+}
+async function generateAiImage(){
+  const prompt=v('ai-prompt').trim(),userKey=v('ai-user-key').trim(),apiKey=userKey||window.ANTHROPIC_API_KEY||'';
+  if(!prompt)return toast('Describe the image you want');
+  if(!apiKey)return toast('No API key — add one above or ask your admin to set a shared key');
+  const btn=document.getElementById('ai-gen-btn'),status=document.getElementById('ai-status'),stText=document.getElementById('ai-status-text'),prev=document.getElementById('ai-preview');
+  btn.disabled=true;status.style.display='block';prev.style.display='none';submitState.finalUrl=null;
+  const steps=['Consulting the muse…','Sketching concepts…','Adding dramatic lighting…','Rendering pixels…','Finishing touches…'];
+  let si=0;stText.textContent=steps[0];
+  const stepTimer=setInterval(()=>{si=(si+1)%steps.length;stText.textContent=steps[si]},2200);
+  try{
+    const aiResp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-5',max_tokens:4096,messages:[{role:'user',content:`Create a vivid image prompt based on this description, then produce the image as a base64 PNG data URL on its own line in format DATA_URL:<data:image/png;base64,...>\n\nDescription: ${prompt}\n\nRespond with just the DATA_URL line.`}]})});
+    clearInterval(stepTimer);
+    if(!aiResp.ok){const err=await aiResp.json().catch(()=>({}));throw new Error(err.error?.message||`API error ${aiResp.status}`)}
+    const aiData=await aiResp.json();
+    const text=(aiData.content||[]).find(b=>b.type==='text')?.text||'';
+    const match=text.match(/DATA_URL:(data:image\/[^;\s]+;base64,[A-Za-z0-9+/=]+)/);
+    if(!match)throw new Error('Image generation requires the Images API. Use the URL tab to paste a generated image from DALL·E, Midjourney, or Stable Diffusion.');
+    const dataUrl=match[1];
+    prev.src=dataUrl;prev.style.display='block';stText.textContent='Image ready! ✓';
+    const blob=dataUrlToBlob(dataUrl);
+    const path=`contest-images/ai-${Date.now()}.png`;
+    const{error}=await sb.storage.from('contest-images').upload(path,blob,{contentType:'image/png',cacheControl:'3600'});
+    if(error)throw new Error('Storage upload failed: '+error.message);
+    const{data:{publicUrl}}=sb.storage.from('contest-images').getPublicUrl(path);
+    submitState.finalUrl=publicUrl;
+    setTimeout(()=>{status.style.display='none'},1500);
+  }catch(err){
+    clearInterval(stepTimer);status.style.display='none';
+    let ed=document.getElementById('ai-error');
+    if(!ed){ed=document.createElement('div');ed.id='ai-error';ed.style.cssText='margin-top:12px;padding:12px;border-radius:10px;background:rgba(255,82,119,.1);border:1px solid rgba(255,82,119,.25);font-size:.82rem;color:#ff8aa0;line-height:1.5;';document.getElementById('ai-gen-btn').after(ed)}
+    ed.textContent='⚠ '+err.message;ed.style.display='block';
+  }finally{btn.disabled=false}
+}
+async function submitImage(){
+  const title=v('si-title').trim();
+  if(!title)return toast('Give this contest a title');
+  let finalUrl=submitState.finalUrl;
+  if(submitState.source==='url'){finalUrl=v('si-url').trim();if(!finalUrl)return toast('Enter an image URL');if(!finalUrl.match(/^https?:\/\/.+/))return toast('Enter a valid https:// URL')}
+  if(!finalUrl){if(submitState.source==='photo')return toast('Choose a photo first — wait for upload');if(submitState.source==='ai')return toast('Generate an image first');return toast('Choose an image first')}
+  const schedVal=v('si-schedule').trim();
+  const scheduledFor=schedVal?new Date(schedVal).toISOString():null;
+  const isPublished=!scheduledFor;
+  const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='Submitting…';
+  try{
+    const{data:contest,error}=await sb.from('contests').insert({title,img_url:finalUrl,submitted_by:currentUser.email,caption_hrs:cfg.captionHrs,vote_hrs:cfg.voteHrs,finalized:false,scheduled_for:scheduledFor,is_published:isPublished}).select().single();
+    if(error){toast('Error: '+error.message);return}
+    document.getElementById('si-title').value='';document.getElementById('si-url').value='';document.getElementById('ai-prompt').value='';document.getElementById('si-schedule').value='';
+    ['photo-preview','url-preview','ai-preview'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.src=''}});
+    submitState.finalUrl=null;
+    const ediv=document.getElementById('ai-error');if(ediv)ediv.style.display='none';
+    if(isPublished){
+      // Fire push notification for new contest
+      await triggerPush({event:'new_contest',contest_id:contest.id,title:'New contest: '+title,message:'A new image is ready for captions!'});
+    }
+    toast(scheduledFor?`Scheduled for ${new Date(scheduledFor).toLocaleString()} 📅`:'Image submitted! The clock starts now 🎭');
     showPage('contests');
-  } catch(e) { toast('Error: '+e.message); }
-  finally { btn.disabled=false; btn.textContent='Submit to Contest →'; }
+  }catch(e){toast('Error: '+e.message)}
+  finally{btn.disabled=false;btn.textContent='Submit to Contest →'}
+}
+function dataUrlToBlob(d){const[h,b]=d.split(','),mime=h.match(/:(.*?);/)[1],bin=atob(b),arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);return new Blob([arr],{type:mime})}
+
+// ════════════════════════════════════════
+//  REALTIME
+// ════════════════════════════════════════
+function startRealtime(){
+  if(realtimeChannel)return;
+  realtimeChannel=sb.channel('cc-live')
+    .on('postgres_changes',{event:'*',schema:'public',table:'contests'},()=>{ if(isOnPage('contests'))renderContests() })
+    .on('postgres_changes',{event:'*',schema:'public',table:'captions'},()=>{ if(isOnPage('contests'))renderContests() })
+    .on('postgres_changes',{event:'*',schema:'public',table:'votes'},()=>{ if(isOnPage('contests'))renderContests() })
+    .on('postgres_changes',{event:'*',schema:'public',table:'flags'},()=>{ if(isOnPage('admin'))renderAdmin() })
+    .subscribe(status=>{
+      const ind=document.getElementById('live-indicator');
+      if(ind)ind.style.display=status==='SUBSCRIBED'?'flex':'none';
+    });
+}
+function stopRealtime(){if(realtimeChannel){sb.removeChannel(realtimeChannel);realtimeChannel=null}}
+function isOnPage(id){return document.getElementById('page-'+id)?.classList.contains('active')}
+
+// ════════════════════════════════════════
+//  SCHEDULED CONTEST POLLER (for free tier — no pg_cron)
+// ════════════════════════════════════════
+function startSchedulerPoll(){
+  schedulerTimer=setInterval(publishDueContests, 60000); // every 60s
+  publishDueContests(); // run immediately too
+}
+async function publishDueContests(){
+  if(!currentUser?.isAdmin)return;
+  try{
+    // Find unpublished contests whose scheduled_for has passed
+    const{data:due}=await sb.from('contests')
+      .select('id,title,submitted_by')
+      .eq('is_published',false)
+      .lte('scheduled_for',new Date().toISOString())
+      .not('scheduled_for','is',null);
+    if(!due?.length)return;
+    for(const c of due){
+      await sb.from('contests').update({is_published:true}).eq('id',c.id);
+      await triggerPush({event:'new_contest',contest_id:c.id,title:'New contest: '+c.title,message:'A new image is ready for captions!'});
+    }
+    if(due.length>0&&isOnPage('contests'))renderContests();
+    if(isOnPage('admin'))renderAdmin();
+  }catch{}
 }
 
-// ════════════════════════════════════════════
+// ════════════════════════════════════════
 //  RENDER CONTESTS
-// ════════════════════════════════════════════
-async function renderContests() {
-  const el = document.getElementById('contests-list');
-  el.innerHTML = `<div class="empty"><div class="spinner" style="margin:0 auto 12px"></div><p>Loading contests…</p></div>`;
-  try {
-    const { data: contests, error } = await sb.from('contests')
-      .select('*, captions(id, email, title, text, created_at)')
-      .order('created_at', { ascending: false });
-    if (error) { el.innerHTML=`<div class="empty"><p>Error loading contests.</p></div>`; return; }
-
-    // Load votes for current user
-    const { data: myVotes } = await sb.from('votes')
-      .select('contest_id, caption_id').eq('voter_email', currentUser.email);
-    const myVoteMap = {};
-    (myVotes||[]).forEach(v => myVoteMap[v.contest_id] = v.caption_id);
-
-    // Load all vote counts
-    const { data: allVotes } = await sb.from('votes').select('caption_id, contest_id');
-    const voteCounts = {};
-    (allVotes||[]).forEach(v => { voteCounts[v.caption_id] = (voteCounts[v.caption_id]||0)+1; });
-
-    // Auto-finalize if needed
-    const now = Date.now();
-    const toFinalize = (contests||[]).filter(c => {
-      if (c.finalized || !cfg.autoFinalize) return false;
-      return getPhase(c, now).phase === 'closed';
-    });
-    for (const c of toFinalize) { await doFinalize(c, voteCounts); }
-
-    if (!contests?.length) {
-      el.innerHTML = `<div class="empty"><div class="empty-icon">🎭</div><p>No contests yet — submit an image to start!</p></div>`;
-      return;
-    }
-
-    const phaseOrder = { caption:0, voting:1, closed:2, revealed:3 };
-    const sorted = [...contests].sort((a,b) => {
-      const pa = getPhase(a,now).phase, pb = getPhase(b,now).phase;
-      return phaseOrder[pa]!==phaseOrder[pb] ? phaseOrder[pa]-phaseOrder[pb] : new Date(b.created_at)-new Date(a.created_at);
-    });
-
-    el.innerHTML = sorted.map(c => buildContestCard(c, now, myVoteMap, voteCounts)).join('');
-  } catch(e) { el.innerHTML=`<div class="empty"><p>Error: ${esc(e.message)}</p></div>`; }
-}
-
-function buildContestCard(c, now, myVoteMap, voteCounts) {
-  const { phase, captionEnd, voteEnd, msLeft } = getPhase(c, now);
-  const badges = {
-    caption: `<span class="badge badge-green">✏️ Open</span>`,
-    voting:  `<span class="badge badge-blue">🗳 Voting</span>`,
-    closed:  `<span class="badge badge-yellow">⌛ Pending</span>`,
-    revealed:`<span class="badge badge-gray">✅ Done</span>`
-  };
-  let cdHtml = '';
-  if (phase==='caption' && msLeft!=null)
-    cdHtml = `<span class="countdown ${msLeft<3600000?'urgent':''}">⏱ ${fmtMs(msLeft)}</span>`;
-  else if (phase==='voting' && msLeft!=null)
-    cdHtml = `<span class="countdown ${msLeft<3600000?'urgent':''}" style="${msLeft>=3600000?'color:var(--blue)':''}">🗳 ${fmtMs(msLeft)}</span>`;
-
-  const tlCaption  = phase==='caption' ? 'tl-active' : 'tl-done';
-  const tlVoting   = phase==='voting'  ? 'tl-vote'   : (phase==='caption' ? '' : 'tl-done');
-  const tlResults  = phase==='revealed'? 'tl-result'  : (phase==='closed' ? 'tl-active' : '');
-  const timelineHtml = `
-    <div class="timeline-bar">
-      <div class="tl-seg ${tlCaption}">✏️ ${c.caption_hrs??cfg.captionHrs}h</div>
-      <div class="tl-seg ${tlVoting}">🗳 ${c.vote_hrs??cfg.voteHrs}h</div>
-      <div class="tl-seg ${tlResults}">🏁 Results</div>
-    </div>`;
-
-  const captions   = c.captions || [];
-  const myVote     = myVoteMap[c.id];
-  const myCaption  = captions.find(x => x.email===currentUser.email);
-  const isAdmin    = currentUser.isAdmin;
-
-  let captionsHtml = '';
-  if (phase==='revealed') {
-    const top3 = [...captions].sort((a,b)=>(voteCounts[b.id]||0)-(voteCounts[a.id]||0))
-      .filter((cap,i)=>i<3 && (voteCounts[cap.id]||0)>0);
-    if (!top3.length) {
-      captionsHtml = `<div style="color:var(--text2);font-size:.88rem;padding:8px 0;">No votes cast — no winners.</div>`;
-    } else {
-      const medals=['🥇','🥈','🥉'], wc=['winner-1','winner-2','winner-3'];
-      captionsHtml = `<div class="caption-list">`+top3.map((cap,i)=>{
-        const vc = voteCounts[cap.id]||0;
-        const isMe = cap.email===currentUser.email ? `<span class="tag" style="margin-left:5px">you</span>` : '';
-        return `<div class="caption-entry ${wc[i]}">
-          <div class="vote-medal">${medals[i]}<span>${vc}v</span></div>
-          <div style="flex:1">
-            <div class="caption-text">${esc(cap.title?`"${cap.title}" — `:'')}${esc(cap.text)}${isMe}</div>
-            <div class="caption-anon">Anonymous caption</div>
-          </div>
-        </div>`;
-      }).join('')+`</div>`;
-    }
-  } else if (phase==='voting') {
-    const shuffled = shuffle([...captions]);
-    captionsHtml = `<div class="anon-notice">🎭 Captions are anonymous — vote for your favorite!</div>`
-      + (shuffled.length ? `<div class="caption-list">`+shuffled.map(cap => {
-        const isMe  = cap.email===currentUser.email;
-        const voted = myVote===cap.id;
-        let leftEl;
-        if (isMe)        leftEl=`<button class="caption-vote-btn" disabled>✍️</button>`;
-        else if (myVote) leftEl=`<button class="caption-vote-btn ${voted?'voted':''}" disabled>${voted?'✓':'▲'}</button>`;
-        else             leftEl=`<button class="caption-vote-btn votable" onclick="voteCaption('${c.id}','${cap.id}')">▲</button>`;
-        return `<div class="caption-entry">${leftEl}<div style="flex:1">
-          <div class="caption-text">${esc(cap.title?`"${cap.title}" — `:'')}${esc(cap.text)}</div>
-          <div class="caption-anon">Anonymous caption</div>
-        </div></div>`;
-      }).join('')+`</div>`
-      : `<div style="color:var(--text2);font-size:.88rem;padding:8px 0;">No captions were submitted.</div>`);
-  } else if (phase==='caption') {
-    const n = captions.length;
-    captionsHtml = `<div style="color:var(--text2);font-size:.85rem;padding:8px 0;">
-      ${n>0?`${n} caption${n!==1?'s':''} in so far — identities stay hidden until voting.`:'No captions yet — be the first!'}
-    </div>`;
-  } else {
-    const tv = captions.reduce((s,cap)=>s+(voteCounts[cap.id]||0),0);
-    captionsHtml = `<div style="color:var(--text2);font-size:.85rem;padding:8px 0;">
-      ${captions.length} captions · ${tv} vote${tv!==1?'s':''} cast — waiting for admin to reveal results.
-    </div>`;
-  }
-
-  let submitForm = '';
-  if (phase==='caption') {
-    submitForm = myCaption
-      ? `<div class="caption-submit-form" style="color:var(--text2);font-size:.85rem;">✅ Your caption is in — come back when voting opens!</div>`
-      : `<div class="caption-submit-form">
-          <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:10px;">Your Caption</div>
-          <div class="form-group"><input type="text" id="ct-${c.id}" placeholder="Title (optional)"></div>
-          <textarea id="cb-${c.id}" placeholder="Write something witty…" rows="3"></textarea>
-          <button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%;" onclick="submitCaption('${c.id}')">Submit Caption ✏️</button>
-        </div>`;
-  }
-
-  // Winner overlay on image
-  let imgHtml;
-  if (phase==='revealed' && captions.length>0) {
-    const winner = [...captions].sort((a,b)=>(voteCounts[b.id]||0)-(voteCounts[a.id]||0))[0];
-    imgHtml = `<div class="result-overlay">
-      <img class="contest-img" src="${ea(c.img_url)}" alt="${ea(c.title)}" ${imgErr()}>
-      <div class="result-caption-overlay">🥇 ${esc(winner.title?`"${winner.title}" — `:'')}${esc(winner.text)}</div>
-    </div>`;
-  } else {
-    imgHtml = `<img class="contest-img" src="${ea(c.img_url)}" alt="${ea(c.title)}" ${imgErr()}>`;
-  }
-
-  const adminActions = (isAdmin && phase==='closed')
-    ? `<div style="margin-top:14px;"><button class="btn btn-danger btn-sm" onclick="finalizeContest('${c.id}')">🏁 Reveal Results</button></div>`
-    : '';
-
-  return `<div class="contest-card" id="ccard-${c.id}">
-    <div class="contest-img-wrap">${imgHtml}</div>
-    <div class="contest-body">
-      <div class="contest-meta">
-        <div class="contest-title-text">${esc(c.title)}</div>
-        ${badges[phase]||''}${cdHtml?'&nbsp;'+cdHtml:''}
-      </div>
-      ${timelineHtml}
-      ${captionsHtml}
-      ${submitForm}
-      ${adminActions}
-    </div>
-  </div>`;
-}
-
-// ════════════════════════════════════════════
-//  SUBMIT CAPTION
-// ════════════════════════════════════════════
-async function submitCaption(contestId) {
-  const title = (document.getElementById('ct-'+contestId)?.value||'').trim();
-  const text  = (document.getElementById('cb-'+contestId)?.value||'').trim();
-  if (!text) return toast('Write something witty!');
-  try {
-    const { data: contest } = await sb.from('contests').select('created_at,caption_hrs,vote_hrs,finalized').eq('id', contestId).single();
-    if (!contest) return toast('Contest not found');
-    if (getPhase(contest, Date.now()).phase !== 'caption') return toast('Caption window has closed');
-    const { error } = await sb.from('captions').insert({
-      contest_id: contestId, email: currentUser.email, title, text
-    });
-    if (error) {
-      if (error.code==='23505') return toast("You've already submitted a caption");
-      return toast('Error: '+error.message);
-    }
-    toast('Caption submitted! 🎭');
-    renderContests();
-  } catch(e) { toast('Error: '+e.message); }
-}
-
-// ════════════════════════════════════════════
-//  VOTE
-// ════════════════════════════════════════════
-async function voteCaption(contestId, captionId) {
-  try {
-    const { data: contest } = await sb.from('contests').select('created_at,caption_hrs,vote_hrs,finalized,captions(email)').eq('id', contestId).single();
-    if (!contest) return;
-    if (getPhase(contest, Date.now()).phase !== 'voting') return toast('Voting is not open');
-    const cap = (contest.captions||[]).find(x=>x.id===captionId);
-    if (cap?.email===currentUser.email) return toast("Can't vote for your own caption");
-    const { error } = await sb.from('votes').insert({
-      contest_id: contestId, caption_id: captionId, voter_email: currentUser.email
-    });
-    if (error) {
-      if (error.code==='23505') return toast("You've already voted");
-      return toast('Error: '+error.message);
-    }
-    toast('Vote cast! 🗳️');
-    renderContests();
-  } catch(e) { toast('Error: '+e.message); }
-}
-
-// ════════════════════════════════════════════
-//  FINALIZE
-// ════════════════════════════════════════════
-async function finalizeContest(contestId) {
-  try {
-    const { data: contest } = await sb.from('contests')
-      .select('*, captions(id,email,title,text)').eq('id',contestId).single();
-    const { data: allVotes } = await sb.from('votes').select('caption_id').eq('contest_id',contestId);
-    const vc = {};
-    (allVotes||[]).forEach(v=>{ vc[v.caption_id]=(vc[v.caption_id]||0)+1; });
-    await doFinalize(contest, vc);
-    toast('Results revealed! 🏆');
-    renderContests();
-  } catch(e) { toast('Error: '+e.message); }
-}
-
-async function doFinalize(contest, voteCounts) {
-  const sorted = [...(contest.captions||[])].sort((a,b)=>(voteCounts[b.id]||0)-(voteCounts[a.id]||0));
-  const pts = [3,2,1];
-  const updates = [];
-  sorted.slice(0,3).forEach((cap,i)=>{
-    if ((voteCounts[cap.id]||0)>0) updates.push({ email:cap.email, points:pts[i] });
-  });
-  // Upsert leaderboard points
-  for (const u of updates) {
-    const { data: existing } = await sb.from('leaderboard').select('points').eq('email',u.email).single();
-    const newPts = (existing?.points||0) + u.points;
-    await sb.from('leaderboard').upsert({ email:u.email, points:newPts }, { onConflict:'email' });
-  }
-  await sb.from('contests').update({ finalized:true }).eq('id', contest.id);
-}
-
-// ════════════════════════════════════════════
-//  LEADERBOARD
-// ════════════════════════════════════════════
-async function renderLeaderboard() {
-  const el = document.getElementById('leaderboard-list');
-  el.innerHTML = `<div class="empty"><div class="spinner" style="margin:0 auto"></div></div>`;
-  try {
-    const { data: lb } = await sb.from('leaderboard').select('email,points,users(handle)').order('points',{ascending:false});
-    if (!lb?.length) {
-      el.innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>No scores yet — finalize a contest!</p></div>`;
-      return;
-    }
-    const medals=['🥇','🥈','🥉'];
-    el.innerHTML=lb.map(({email,points,users:u},i)=>`
-      <div class="lb-row">
-        <div class="lb-rank ${i<3?'r'+(i+1):''}">${medals[i]||(i+1)}</div>
-        <div style="flex:1">
-          <div class="lb-handle">@${esc(u?.handle||email)}</div>
-          <div class="lb-sub">${esc(email)}</div>
-        </div>
-        <div class="lb-pts">${points} pts</div>
-      </div>`).join('');
-  } catch(e) { el.innerHTML=`<div class="empty"><p>Error loading leaderboard.</p></div>`; }
-}
-
-// ════════════════════════════════════════════
-//  ADMIN PANEL
-// ════════════════════════════════════════════
-async function renderAdmin() {
-  loadCfgIntoForm();
-  // Contests
-  const cl = document.getElementById('admin-contests-list');
-  cl.innerHTML = `<div style="color:var(--text2);padding:8px;">Loading…</div>`;
-  try {
-    const { data: contests } = await sb.from('contests')
-      .select('id,title,created_at,finalized,caption_hrs,vote_hrs,captions(id),votes:votes(id)')
+// ════════════════════════════════════════
+async function renderContests(){
+  const el=document.getElementById('contests-list');
+  el.innerHTML=`<div class="empty"><div class="spinner" style="margin:0 auto 12px"></div><p>Loading…</p></div>`;
+  try{
+    const{data:contests,error}=await sb.from('contests')
+      .select('*, captions(id,email,title,text,hidden)')
+      .eq('is_published',true)
       .order('created_at',{ascending:false});
-    if (!contests?.length) { cl.innerHTML='<div style="color:var(--text2);padding:8px;">No contests yet.</div>'; }
-    else {
-      const now=Date.now();
-      cl.innerHTML=contests.map(c=>{
-        const {phase,captionEnd,voteEnd}=getPhase(c,now);
-        const plab={caption:'✏️ Captions',voting:'🗳 Voting',closed:'⌛ Closed',revealed:'✅ Revealed'}[phase];
-        return `<div class="lb-row" style="flex-wrap:wrap;gap:8px;align-items:flex-start;">
-          <div style="flex:1;min-width:180px;">
-            <div style="font-weight:600;">${esc(c.title)} <span class="tag">${plab}</span></div>
-            <div style="font-size:.75rem;color:var(--text2);margin-top:3px;">
-              ${c.captions?.length||0} captions · ${c.votes?.length||0} votes<br>
-              Captions → ${new Date(captionEnd).toLocaleString()}<br>
-              Voting → ${new Date(voteEnd).toLocaleString()}
-            </div>
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:4px;">
-            ${phase==='closed'?`<button class="btn btn-primary btn-sm" onclick="finalizeContest('${c.id}')">🏁 Reveal</button>`:''}
-            <button class="btn btn-danger btn-sm" onclick="adminDeleteContest('${c.id}')">Delete</button>
-          </div>
-        </div>`;
-      }).join('');
+    if(error){el.innerHTML=`<div class="empty"><p>Error loading contests.</p></div>`;return}
+    const{data:myVotes}=await sb.from('votes').select('contest_id,caption_id').eq('voter_email',currentUser.email);
+    const myVoteMap={};(myVotes||[]).forEach(v=>myVoteMap[v.contest_id]=v.caption_id);
+    const{data:allVotes}=await sb.from('votes').select('caption_id,contest_id');
+    const voteCounts={};(allVotes||[]).forEach(v=>{voteCounts[v.caption_id]=(voteCounts[v.caption_id]||0)+1});
+    // Load user's flags so we know what they've already flagged
+    const{data:myFlags}=await sb.from('flags').select('caption_id').eq('reporter_email',currentUser.email);
+    const myFlagSet=new Set((myFlags||[]).map(f=>f.caption_id));
+    const now=Date.now();
+    // Auto-finalize
+    if(cfg.autoFinalize){
+      for(const c of(contests||[])){
+        if(!c.finalized&&getPhase(c,now).phase==='closed'){
+          const{data:av}=await sb.from('votes').select('caption_id').eq('contest_id',c.id);
+          const vc={};(av||[]).forEach(v=>{vc[v.caption_id]=(vc[v.caption_id]||0)+1});
+          await doFinalize(c,vc);
+        }
+      }
     }
-  } catch(e) { cl.innerHTML=`<div style="color:var(--text2);padding:8px;">Error loading.</div>`; }
+    if(!contests?.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🎭</div><p>No contests yet — submit an image to start!</p></div>`;return}
+    const po={caption:0,voting:1,closed:2,revealed:3};
+    const sorted=[...contests].sort((a,b)=>{const pa=getPhase(a,now).phase,pb=getPhase(b,now).phase;return po[pa]!==po[pb]?po[pa]-po[pb]:new Date(b.created_at)-new Date(a.created_at)});
+    el.innerHTML=sorted.map(c=>buildContestCard(c,now,myVoteMap,voteCounts,myFlagSet)).join('');
+    // Check for phase transitions and send push notifications
+    checkPhaseTransitions(sorted,now);
+  }catch(e){el.innerHTML=`<div class="empty"><p>Error: ${esc(e.message)}</p></div>`}
+}
 
+// Track which contests we've notified about to avoid repeat pushes
+const notifiedPhases = JSON.parse(localStorage.getItem('cc_notified')||'{}');
+function checkPhaseTransitions(contests,now){
+  let dirty=false;
+  for(const c of contests){
+    const{phase}=getPhase(c,now);
+    const key=c.id+'_'+phase;
+    if(!notifiedPhases[key]){
+      notifiedPhases[key]=true;dirty=true;
+      // Only notify about contests the user is involved in
+      const myCaption=(c.captions||[]).find(x=>x.email===currentUser.email);
+      if(myCaption){
+        if(phase==='voting') triggerPush({event:'voting',contest_id:c.id,title:'Voting is open!',message:`Vote for your favorite caption in: ${c.title}`});
+        if(phase==='revealed') triggerPush({event:'results',contest_id:c.id,title:'Results revealed! 🏆',message:`See who won: ${c.title}`});
+      }
+    }
+  }
+  if(dirty)localStorage.setItem('cc_notified',JSON.stringify(notifiedPhases));
+}
+
+function buildContestCard(c,now,myVoteMap,voteCounts,myFlagSet){
+  const{phase,captionEnd,voteEnd,msLeft}=getPhase(c,now);
+  const badges={caption:`<span class="badge badge-green">✏️ Open</span>`,voting:`<span class="badge badge-blue">🗳 Voting</span>`,closed:`<span class="badge badge-yellow">⌛ Pending</span>`,revealed:`<span class="badge badge-gray">✅ Done</span>`};
+  let cdHtml='';
+  if(phase==='caption'&&msLeft!=null)cdHtml=`<span class="countdown ${msLeft<3600000?'urgent':''}">⏱ ${fmtMs(msLeft)}</span>`;
+  else if(phase==='voting'&&msLeft!=null)cdHtml=`<span class="countdown ${msLeft<3600000?'urgent':''}" style="${msLeft>=3600000?'color:var(--blue)':''}">🗳 ${fmtMs(msLeft)}</span>`;
+  const tlC=phase==='caption'?'tl-active':'tl-done',tlV=phase==='voting'?'tl-vote':(phase==='caption'?'':'tl-done'),tlR=phase==='revealed'?'tl-result':(phase==='closed'?'tl-active':'');
+  const timeline=`<div class="timeline-bar"><div class="tl-seg ${tlC}">✏️ ${c.caption_hrs??cfg.captionHrs}h</div><div class="tl-seg ${tlV}">🗳 ${c.vote_hrs??cfg.voteHrs}h</div><div class="tl-seg ${tlR}">🏁 Results</div></div>`;
+  // Visible captions: filter hidden unless admin
+  const allCaps=c.captions||[];
+  const captions=currentUser.isAdmin?allCaps:allCaps.filter(x=>!x.hidden);
+  const myVote=myVoteMap[c.id];
+  const myCaption=captions.find(x=>x.email===currentUser.email);
+  const isAdmin=currentUser.isAdmin;
+  let captionsHtml='';
+  if(phase==='revealed'){
+    const top3=[...captions].sort((a,b)=>(voteCounts[b.id]||0)-(voteCounts[a.id]||0)).filter((cap,i)=>i<3&&(voteCounts[cap.id]||0)>0);
+    if(!top3.length)captionsHtml=`<div style="color:var(--text2);font-size:.88rem;padding:8px 0;">No votes cast — no winners.</div>`;
+    else{const med=['🥇','🥈','🥉'],wc=['winner-1','winner-2','winner-3'];captionsHtml=`<div class="caption-list">`+top3.map((cap,i)=>{const vc=voteCounts[cap.id]||0,isMe=cap.email===currentUser.email?`<span class="tag" style="margin-left:5px">you</span>`:'';return`<div class="caption-entry ${wc[i]}"><div class="vote-medal">${med[i]}<span>${vc}v</span></div><div style="flex:1"><div class="caption-text">${esc(cap.title?`"${cap.title}" — `:'')}${esc(cap.text)}${isMe}</div><div class="caption-anon">Anonymous caption</div></div></div>`}).join('')+`</div>`}
+    // Share button
+    captionsHtml+=`<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;"><button class="share-btn" onclick="openShareModal('${c.id}')">🎉 Share Results</button></div>`;
+  }else if(phase==='voting'){
+    const shuffled=shuffle([...captions]);
+    captionsHtml=`<div class="anon-notice">🎭 Captions are anonymous — vote for your favorite!</div>`+(shuffled.length?`<div class="caption-list">`+shuffled.map(cap=>{const isMe=cap.email===currentUser.email,voted=myVote===cap.id;let le;if(isMe)le=`<button class="caption-vote-btn" disabled>✍️</button>`;else if(myVote)le=`<button class="caption-vote-btn ${voted?'voted':''}" disabled>${voted?'✓':'▲'}</button>`;else le=`<button class="caption-vote-btn votable" onclick="voteCaption('${c.id}','${cap.id}')">▲</button>`;
+    const alreadyFlagged=myFlagSet.has(cap.id);
+    return`<div class="caption-entry">${le}<div style="flex:1"><div class="caption-text">${esc(cap.title?`"${cap.title}" — `:'')}${esc(cap.text)}</div><div class="caption-anon">Anonymous caption</div>${!isMe?`<button class="flag-btn ${alreadyFlagged?'flagged':''}" onclick="openFlagModal('${cap.id}')" ${alreadyFlagged?'disabled title="Already flagged"':''}>🚩 ${alreadyFlagged?'Flagged':'Flag'}</button>`:''}</div></div>`}).join('')+`</div>`:`<div style="color:var(--text2);font-size:.88rem;padding:8px 0;">No captions submitted.</div>`);
+  }else if(phase==='caption'){
+    const n=captions.length;captionsHtml=`<div style="color:var(--text2);font-size:.85rem;padding:8px 0;">${n>0?`${n} caption${n!==1?'s':''} in — identities hidden until voting.`:'No captions yet — be the first!'}</div>`;
+  }else{
+    const tv=captions.reduce((s,cap)=>s+(voteCounts[cap.id]||0),0);captionsHtml=`<div style="color:var(--text2);font-size:.85rem;padding:8px 0;">${captions.length} captions · ${tv} vote${tv!==1?'s':''} — waiting for admin to reveal.</div>`;
+  }
+  let submitForm='';
+  if(phase==='caption'){submitForm=myCaption?`<div class="caption-submit-form" style="color:var(--text2);font-size:.85rem;">✅ Your caption is in — come back when voting opens!</div>`:`<div class="caption-submit-form"><div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:10px;">Your Caption</div><div class="form-group"><input type="text" id="ct-${c.id}" placeholder="Title (optional)"></div><textarea id="cb-${c.id}" placeholder="Write something witty…" rows="3"></textarea><button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%;" onclick="submitCaption('${c.id}')">Submit Caption ✏️</button></div>`}
+  let imgHtml;
+  if(phase==='revealed'&&captions.length>0){const winner=[...captions].sort((a,b)=>(voteCounts[b.id]||0)-(voteCounts[a.id]||0))[0];imgHtml=`<div class="result-overlay"><img class="contest-img" src="${ea(c.img_url)}" alt="${ea(c.title)}" ${imgErr()}><div class="result-caption-overlay">🥇 ${esc(winner.title?`"${winner.title}" — `:'')}${esc(winner.text)}</div></div>`}
+  else imgHtml=`<img class="contest-img" src="${ea(c.img_url)}" alt="${ea(c.title)}" ${imgErr()}>`;
+  const adminActions=(isAdmin&&phase==='closed')?`<div style="margin-top:14px;"><button class="btn btn-danger btn-sm" onclick="finalizeContest('${c.id}')">🏁 Reveal Results</button></div>`:'';
+  return`<div class="contest-card" id="ccard-${c.id}"><div class="contest-img-wrap">${imgHtml}</div><div class="contest-body"><div class="contest-meta"><div class="contest-title-text">${esc(c.title)}</div>${badges[phase]||''}${cdHtml?'&nbsp;'+cdHtml:''}</div>${timeline}${captionsHtml}${submitForm}${adminActions}</div></div>`;
+}
+
+// ════════════════════════════════════════
+//  SUBMIT CAPTION
+// ════════════════════════════════════════
+async function submitCaption(contestId){
+  const title=(document.getElementById('ct-'+contestId)?.value||'').trim(),text=(document.getElementById('cb-'+contestId)?.value||'').trim();
+  if(!text)return toast('Write something witty!');
+  try{
+    const{data:contest}=await sb.from('contests').select('created_at,caption_hrs,vote_hrs,finalized').eq('id',contestId).single();
+    if(!contest)return toast('Contest not found');
+    if(getPhase(contest,Date.now()).phase!=='caption')return toast('Caption window has closed');
+    const{error}=await sb.from('captions').insert({contest_id:contestId,email:currentUser.email,title,text});
+    if(error){if(error.code==='23505')return toast("You've already submitted");return toast('Error: '+error.message)}
+    toast('Caption submitted! 🎭');renderContests();
+  }catch(e){toast('Error: '+e.message)}
+}
+
+// ════════════════════════════════════════
+//  VOTE
+// ════════════════════════════════════════
+async function voteCaption(contestId,captionId){
+  try{
+    const{data:contest}=await sb.from('contests').select('created_at,caption_hrs,vote_hrs,finalized').eq('id',contestId).single();
+    if(!contest)return;
+    if(getPhase(contest,Date.now()).phase!=='voting')return toast('Voting is not open');
+    const{error}=await sb.from('votes').insert({contest_id:contestId,caption_id:captionId,voter_email:currentUser.email});
+    if(error){if(error.code==='23505')return toast("You've already voted");return toast('Error: '+error.message)}
+    toast('Vote cast! 🗳️');renderContests();
+  }catch(e){toast('Error: '+e.message)}
+}
+
+// ════════════════════════════════════════
+//  FLAG / REPORT
+// ════════════════════════════════════════
+function openFlagModal(captionId){document.getElementById('flag-caption-id').value=captionId;document.getElementById('flag-reason').value='';document.getElementById('flag-modal').style.display='flex'}
+function closeFlagModal(e){if(e.target===document.getElementById('flag-modal'))document.getElementById('flag-modal').style.display='none'}
+async function submitFlag(){
+  const captionId=v('flag-caption-id'),reason=v('flag-reason').trim();
+  if(!captionId)return;
+  try{
+    // Insert flag
+    const{error:fe}=await sb.from('flags').insert({caption_id:captionId,reporter_email:currentUser.email,reason});
+    if(fe){if(fe.code==='23505')return toast('Already flagged');return toast('Error: '+fe.message)}
+    // Auto-hide the caption
+    await sb.from('captions').update({hidden:true}).eq('id',captionId);
+    // Notify admins
+    const{data:admins}=await sb.from('users').select('email').eq('is_admin',true);
+    if(admins?.length){await triggerPush({event:'flagged',caption_id:captionId,target_emails:admins.map(a=>a.email),title:'Caption flagged 🚩',message:`A caption was flagged${reason?`: "${reason}"`:'. Review in Admin panel.'}`})}
+    document.getElementById('flag-modal').style.display='none';
+    toast('Caption flagged and hidden — admin will review 🚩');
+    renderContests();
+  }catch(e){toast('Error: '+e.message)}
+}
+
+// ════════════════════════════════════════
+//  FINALIZE
+// ════════════════════════════════════════
+async function finalizeContest(contestId){
+  try{
+    const{data:contest}=await sb.from('contests').select('*,captions(id,email,title,text,hidden)').eq('id',contestId).single();
+    const{data:av}=await sb.from('votes').select('caption_id').eq('contest_id',contestId);
+    const vc={};(av||[]).forEach(v=>{vc[v.caption_id]=(vc[v.caption_id]||0)+1});
+    await doFinalize(contest,vc);
+    // Notify participants
+    const participantEmails=[...new Set((contest.captions||[]).map(c=>c.email))];
+    if(participantEmails.length)await triggerPush({event:'results',contest_id:contestId,target_emails:participantEmails,title:'Results revealed! 🏆',message:`Winners announced for: ${contest.title}`});
+    toast('Results revealed! 🏆');renderContests();
+  }catch(e){toast('Error: '+e.message)}
+}
+async function doFinalize(contest,voteCounts){
+  const sorted=[...(contest.captions||[])].filter(c=>!c.hidden).sort((a,b)=>(voteCounts[b.id]||0)-(voteCounts[a.id]||0));
+  const pts=[3,2,1],lb=await getLBSnapshot();
+  sorted.slice(0,3).forEach((cap,i)=>{if((voteCounts[cap.id]||0)>0){const cur=lb[cap.email]||0;lb[cap.email]=cur+pts[i]}});
+  for(const[email,points]of Object.entries(lb)){await sb.from('leaderboard').upsert({email,points},{onConflict:'email'})}
+  await sb.from('contests').update({finalized:true}).eq('id',contest.id);
+}
+async function getLBSnapshot(){const{data}=await sb.from('leaderboard').select('email,points');const m={};(data||[]).forEach(r=>m[r.email]=r.points);return m}
+
+// ════════════════════════════════════════
+//  SHARE CARD
+// ════════════════════════════════════════
+let shareContest=null;
+async function openShareModal(contestId){
+  document.getElementById('share-modal').style.display='flex';
+  document.getElementById('share-contest-id').value=contestId;
+  // Load contest data
+  const{data:c}=await sb.from('contests').select('*,captions(id,email,title,text)').eq('id',contestId).single();
+  const{data:av}=await sb.from('votes').select('caption_id').eq('contest_id',contestId);
+  const vc={};(av||[]).forEach(v=>{vc[v.caption_id]=(vc[v.caption_id]||0)+1});
+  shareContest={contest:c,voteCounts:vc};
+  await drawShareCard(c,vc);
+}
+function closeShareModal(e){if(e.target===document.getElementById('share-modal'))document.getElementById('share-modal').style.display='none'}
+
+async function drawShareCard(c,voteCounts){
+  const canvas=document.getElementById('share-canvas');
+  const W=800,H=480;canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  // Background
+  ctx.fillStyle='#0d0d14';ctx.fillRect(0,0,W,H);
+  // Load and draw image
+  try{
+    const img=await loadImg(c.img_url);
+    const scale=Math.max(W/img.width,H*0.65/img.height);
+    const iw=img.width*scale,ih=img.height*scale;
+    ctx.drawImage(img,(W-iw)/2,0,iw,ih);
+  }catch{}
+  // Gradient overlay
+  const grad=ctx.createLinearGradient(0,H*0.4,0,H);
+  grad.addColorStop(0,'rgba(13,13,20,0)');grad.addColorStop(0.5,'rgba(13,13,20,.85)');grad.addColorStop(1,'rgba(13,13,20,1)');
+  ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+  // Contest title
+  ctx.fillStyle='#8888aa';ctx.font='500 16px "Instrument Sans",sans-serif';
+  ctx.textAlign='center';ctx.fillText(c.title.toUpperCase(),W/2,H-160);
+  // Top 3 captions
+  const top3=[...( c.captions||[])].sort((a,b)=>(voteCounts[b.id]||0)-(voteCounts[a.id]||0)).filter((cap,i)=>i<3&&(voteCounts[cap.id]||0)>0);
+  const medals=['🥇','🥈','🥉'],colors=['#ffc940','#c8c8e0','#d4804a'];
+  let y=H-130;
+  for(let i=0;i<top3.length;i++){
+    const cap=top3[i],text=(cap.title?`"${cap.title}" — `:'')+cap.text;
+    ctx.fillStyle=colors[i];ctx.font=`700 ${i===0?22:16}px "Syne",sans-serif`;
+    ctx.textAlign='center';
+    const maxW=W-80;
+    wrapText(ctx,medals[i]+' '+text,W/2,y,maxW,i===0?28:22);
+    y+=i===0?50:32;
+  }
+  // Branding
+  ctx.fillStyle='#e8ff47';ctx.font='bold 18px "Syne",sans-serif';ctx.textAlign='right';
+  ctx.fillText('CaptionClash ⚡',W-24,H-14);
+}
+function wrapText(ctx,text,x,y,maxW,lineH){
+  const words=text.split(' ');let line='';
+  for(const w of words){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){ctx.fillText(line,x,y);line=w;y+=lineH}else line=t}
+  if(line)ctx.fillText(line,x,y);
+}
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=rej;i.src=src})}
+
+function downloadShareCard(){
+  const canvas=document.getElementById('share-canvas');
+  const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='captiondash-results.png';a.click();
+  toast('Image downloaded! 📸');
+}
+async function copyShareLink(){
+  const id=v('share-contest-id');
+  const url=`${location.origin}${location.pathname}#contest-${id}`;
+  try{await navigator.clipboard.writeText(url);toast('Link copied to clipboard! 🔗')}
+  catch{toast('Link: '+url)}
+}
+
+// ════════════════════════════════════════
+//  LEADERBOARD
+// ════════════════════════════════════════
+async function renderLeaderboard(){
+  const el=document.getElementById('leaderboard-list');
+  el.innerHTML=`<div class="empty"><div class="spinner" style="margin:0 auto"></div></div>`;
+  try{
+    const{data:lb}=await sb.from('leaderboard').select('email,points,users(handle)').order('points',{ascending:false});
+    if(!lb?.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>No scores yet!</p></div>`;return}
+    const medals=['🥇','🥈','🥉'];
+    el.innerHTML=lb.map(({email,points,users:u},i)=>`<div class="lb-row"><div class="lb-rank ${i<3?'r'+(i+1):''}">${medals[i]||(i+1)}</div><div style="flex:1"><div class="lb-handle">@${esc(u?.handle||email)}</div><div class="lb-sub">${esc(email)}</div></div><div class="lb-pts">${points} pts</div></div>`).join('');
+  }catch(e){el.innerHTML=`<div class="empty"><p>Error loading leaderboard.</p></div>`}
+}
+
+// ════════════════════════════════════════
+//  ADMIN
+// ════════════════════════════════════════
+async function renderAdmin(){
+  loadCfgIntoForm();
+  // Scheduled contests
+  const sl=document.getElementById('scheduled-list');
+  try{
+    const{data:sched}=await sb.from('contests').select('id,title,scheduled_for,is_published').eq('is_published',false).order('scheduled_for',{ascending:true});
+    if(!sched?.length)sl.innerHTML=`<div style="color:var(--text2);font-size:.85rem;">No scheduled contests.</div>`;
+    else sl.innerHTML=sched.map(c=>`<div class="sched-item"><div style="flex:1"><div style="font-weight:600;">${esc(c.title)}</div><div class="sched-time">Publishes ${new Date(c.scheduled_for).toLocaleString()}</div></div><button class="btn btn-primary btn-sm" onclick="publishNow('${c.id}')">Publish Now</button><button class="btn btn-danger btn-sm" onclick="adminDeleteContest('${c.id}')">✕</button></div>`).join('');
+  }catch{sl.innerHTML=`<div style="color:var(--text2);font-size:.85rem;">Error loading.</div>`}
+  // Flagged captions
+  const fl=document.getElementById('flagged-list');
+  try{
+    const{data:flags}=await sb.from('flags').select('id,caption_id,reporter_email,reason,created_at,captions(id,text,title,hidden,contest_id)').order('created_at',{ascending:false});
+    if(!flags?.length)fl.innerHTML=`<div style="color:var(--text2);font-size:.85rem;">No flagged captions. ✅</div>`;
+    else fl.innerHTML=flags.map(f=>{const cap=f.captions;return`<div class="lb-row" style="flex-wrap:wrap;gap:8px;align-items:flex-start;"><div style="flex:1;min-width:180px;"><div style="font-weight:600;font-size:.88rem;">${esc(cap?.title?`"${cap.title}" — `:'')}${esc(cap?.text||'[deleted]')}</div><div style="font-size:.74rem;color:var(--text2);margin-top:3px;">Flagged by ${esc(f.reporter_email)}${f.reason?` — "${esc(f.reason)}"`:''}</div><div style="font-size:.72rem;color:var(--text3);">${cap?.hidden?'Hidden ✓':'Visible'}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:2px;">${cap?.hidden?`<button class="btn btn-ghost btn-sm" onclick="unflagCaption('${cap.id}','${f.id}')">Restore</button>`:''}<button class="btn btn-danger btn-sm" onclick="adminDeleteCaption('${cap?.id}','${f.id}')">Delete</button></div></div>`}).join('');
+  }catch{fl.innerHTML=`<div style="color:var(--text2);font-size:.85rem;">Error loading.</div>`}
+  // All contests
+  const cl=document.getElementById('admin-contests-list');cl.innerHTML=`<div style="color:var(--text2);padding:8px;">Loading…</div>`;
+  try{
+    const{data:contests}=await sb.from('contests').select('id,title,created_at,finalized,caption_hrs,vote_hrs,is_published,captions(id),votes:votes(id)').order('created_at',{ascending:false});
+    if(!contests?.length)cl.innerHTML='<div style="color:var(--text2);padding:8px;">No contests yet.</div>';
+    else{const now=Date.now();cl.innerHTML=contests.filter(c=>c.is_published).map(c=>{const{phase,captionEnd,voteEnd}=getPhase(c,now),plab={caption:'✏️ Captions',voting:'🗳 Voting',closed:'⌛ Closed',revealed:'✅ Revealed'}[phase];return`<div class="lb-row" style="flex-wrap:wrap;gap:8px;align-items:flex-start;"><div style="flex:1;min-width:180px;"><div style="font-weight:600;">${esc(c.title)} <span class="tag">${plab}</span></div><div style="font-size:.75rem;color:var(--text2);margin-top:3px;">${c.captions?.length||0} captions · ${c.votes?.length||0} votes<br>Captions → ${new Date(captionEnd).toLocaleString()}<br>Voting → ${new Date(voteEnd).toLocaleString()}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:4px;">${phase==='closed'?`<button class="btn btn-primary btn-sm" onclick="finalizeContest('${c.id}')">🏁 Reveal</button>`:''}<button class="btn btn-danger btn-sm" onclick="adminDeleteContest('${c.id}')">Delete</button></div></div>`}).join('')}
+  }catch(e){cl.innerHTML=`<div style="color:var(--text2);padding:8px;">Error.</div>`}
   // Users
-  const ul = document.getElementById('admin-users-list');
-  try {
-    const { data: users } = await sb.from('users').select('email,handle,is_admin').order('handle');
-    ul.innerHTML=(users||[]).map(u=>`
-      <div class="lb-row">
-        <div class="avatar">${u.handle[0].toUpperCase()}</div>
-        <div style="flex:1;margin-left:10px;">
-          <div style="font-weight:600;">@${esc(u.handle)} ${u.is_admin?'<span class="badge badge-red" style="font-size:.68rem;margin-left:4px;">Admin</span>':''}</div>
-          <div style="font-size:.75rem;color:var(--text2);">${esc(u.email)}</div>
-        </div>
-        ${u.email!==currentUser.email?`<button class="btn btn-danger btn-sm" onclick="adminDeleteUser('${ea(u.email)}')">Delete</button>`:''}
-      </div>`).join('');
-  } catch {}
+  const ul=document.getElementById('admin-users-list');
+  try{const{data:users}=await sb.from('users').select('email,handle,is_admin').order('handle');ul.innerHTML=(users||[]).map(u=>`<div class="lb-row"><div class="avatar">${u.handle[0].toUpperCase()}</div><div style="flex:1;margin-left:10px;"><div style="font-weight:600;">@${esc(u.handle)} ${u.is_admin?'<span class="badge badge-red" style="font-size:.68rem;margin-left:4px;">Admin</span>':''}</div><div style="font-size:.75rem;color:var(--text2);">${esc(u.email)}</div></div>${u.email!==currentUser.email?`<button class="btn btn-danger btn-sm" onclick="adminDeleteUser('${ea(u.email)}')">Delete</button>`:''}</div>`).join('')}catch{}
 }
+async function publishNow(id){await sb.from('contests').update({is_published:true,scheduled_for:null}).eq('id',id);toast('Contest published! 🚀');renderAdmin();renderContests()}
+async function unflagCaption(capId,flagId){await sb.from('captions').update({hidden:false}).eq('id',capId);await sb.from('flags').delete().eq('id',flagId);toast('Caption restored');renderAdmin()}
+async function adminDeleteCaption(capId,flagId){if(!confirm('Delete this caption?'))return;if(capId)await sb.from('captions').delete().eq('id',capId);if(flagId)await sb.from('flags').delete().eq('id',flagId);toast('Caption deleted');renderAdmin()}
+async function adminDeleteContest(id){if(!confirm('Delete this contest and all its data?'))return;await sb.from('votes').delete().eq('contest_id',id);await sb.from('captions').delete().eq('contest_id',id);await sb.from('contests').delete().eq('id',id);toast('Contest deleted');renderAdmin()}
+async function adminDeleteUser(email){if(!confirm('Delete user '+email+'?'))return;await sb.from('leaderboard').delete().eq('email',email);await sb.from('users').delete().eq('email',email);toast('User deleted');renderAdmin()}
 
-async function adminDeleteContest(id) {
-  if (!confirm('Delete this contest and all its data?')) return;
-  await sb.from('votes').delete().eq('contest_id',id);
-  await sb.from('captions').delete().eq('contest_id',id);
-  await sb.from('contests').delete().eq('id',id);
-  toast('Contest deleted'); renderAdmin();
-}
-async function adminDeleteUser(email) {
-  if (!confirm('Delete user '+email+'?')) return;
-  await sb.from('leaderboard').delete().eq('email',email);
-  await sb.from('users').delete().eq('email',email);
-  toast('User deleted'); renderAdmin();
-}
+// ════════════════════════════════════════
+//  PUSH NOTIFICATIONS
+// ════════════════════════════════════════
+const VAPID_PUBLIC_KEY = window.VAPID_PUBLIC_KEY || '';
 
-// ════════════════════════════════════════════
+async function loadNotifStatus(){
+  if(!('Notification' in window)||!('serviceWorker' in navigator)){
+    document.getElementById('push-status-msg').textContent='Push notifications are not supported in this browser.';return
+  }
+  const perm=Notification.permission;
+  const msg=document.getElementById('push-status-msg');
+  const enBtn=document.getElementById('push-enable-btn'),disBtn=document.getElementById('push-disable-btn');
+  const prefsCard=document.getElementById('notif-prefs-card');
+  if(perm==='denied'){msg.textContent='Notifications are blocked. Enable them in your browser settings to receive alerts.';return}
+  if(perm==='granted'){
+    msg.textContent='✅ Push notifications are enabled.';
+    enBtn.style.display='none';disBtn.style.display='';prefsCard.style.display='';
+    await loadNotifPrefs();
+    document.getElementById('notif-dot').style.display='none';
+  }else{
+    msg.textContent='Get notified when results are revealed or voting opens on contests you entered.';
+    enBtn.style.display='';disBtn.style.display='none';prefsCard.style.display='none';
+    document.getElementById('notif-dot').style.display='block';
+  }
+}
+async function enablePush(){
+  if(!VAPID_PUBLIC_KEY){toast('Push not configured — admin needs to set VAPID_PUBLIC_KEY in supabase-config.js');return}
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){toast('Notifications blocked');return}
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+    await sb.from('push_subscriptions').upsert({email:currentUser.email,subscription:sub.toJSON(),notify_results:true,notify_voting:false,notify_new_contest:false,notify_flagged:true},{onConflict:'email'});
+    toast('Notifications enabled! 🔔');loadNotifStatus();
+  }catch(e){toast('Could not enable notifications: '+e.message)}
+}
+async function disablePush(){
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    if(sub)await sub.unsubscribe();
+    await sb.from('push_subscriptions').delete().eq('email',currentUser.email);
+    toast('Notifications disabled');loadNotifStatus();
+  }catch(e){toast('Error: '+e.message)}
+}
+async function loadNotifPrefs(){
+  const{data}=await sb.from('push_subscriptions').select('notify_results,notify_voting,notify_new_contest').eq('email',currentUser.email).maybeSingle();
+  if(!data)return;
+  document.getElementById('pref-results').checked=data.notify_results??true;
+  document.getElementById('pref-voting').checked=data.notify_voting??false;
+  document.getElementById('pref-new').checked=data.notify_new_contest??false;
+}
+async function saveNotifPrefs(){
+  await sb.from('push_subscriptions').update({notify_results:document.getElementById('pref-results').checked,notify_voting:document.getElementById('pref-voting').checked,notify_new_contest:document.getElementById('pref-new').checked}).eq('email',currentUser.email);
+}
+async function triggerPush(payload){
+  if(!VAPID_PUBLIC_KEY)return; // Push not configured, skip silently
+  try{
+    await fetch(`${SUPABASE_URL}/functions/v1/send-push`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON_KEY},body:JSON.stringify(payload)});
+  }catch{}
+}
+function urlBase64ToUint8Array(b64){const p='='.repeat((4-b64.length%4)%4),b=atob((b64+p).replace(/-/g,'+').replace(/_/g,'/')),out=new Uint8Array(b.length);for(let i=0;i<b.length;i++)out[i]=b.charCodeAt(i);return out}
+function renderNotifPage(){loadNotifStatus()}
+
+// ════════════════════════════════════════
 //  UTILS
-// ════════════════════════════════════════════
-const v   = id => document.getElementById(id)?.value || '';
-const esc = s  => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
-const ea  = s  => esc(s);
+// ════════════════════════════════════════
+const v=id=>document.getElementById(id)?.value||'';
+const esc=s=>s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';
+const ea=s=>esc(s);
+function fmtMs(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60),d=Math.floor(h/24);if(d>0)return`${d}d ${h%24}h`;if(h>0)return`${h}h ${m%60}m`;if(m>0)return`${m}m`;return`${s}s`}
+function imgErr(){return`onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22240%22%3E%3Crect fill=%22%231c1c2e%22 width=%22400%22 height=%22240%22/%3E%3Ctext fill=%22%238888aa%22 x=%22200%22 y=%22125%22 text-anchor=%22middle%22 font-size=%2216%22 font-family=%22sans-serif%22%3EImage unavailable%3C/text%3E%3C/svg%3E'"`}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),2800)}
 
-function fmtMs(ms) {
-  const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60),d=Math.floor(h/24);
-  if(d>0) return `${d}d ${h%24}h`;
-  if(h>0) return `${h}h ${m%60}m`;
-  if(m>0) return `${m}m`;
-  return `${s}s`;
+// ════════════════════════════════════════
+//  SERVICE WORKER
+// ════════════════════════════════════════
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
+  // Handle push notification clicks — navigate to app
+  navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.type==='push-click')showPage('contests')});
 }
 
-function imgErr() {
-  return `onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22240%22%3E%3Crect fill=%22%231c1c2e%22 width=%22400%22 height=%22240%22/%3E%3Ctext fill=%22%238888aa%22 x=%22200%22 y=%22125%22 text-anchor=%22middle%22 font-size=%2216%22 font-family=%22sans-serif%22%3EImage unavailable%3C/text%3E%3C/svg%3E'"`;
-}
-
-function shuffle(a){
-  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
-  return a;
-}
-
-function toast(msg) {
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.classList.add('show');
-  clearTimeout(toast._t);
-  toast._t=setTimeout(()=>el.classList.remove('show'),2800);
-}
-
-// ════════════════════════════════════════════
-//  SERVICE WORKER REGISTRATION
-// ════════════════════════════════════════════
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-  });
-}
-
-// ════════════════════════════════════════════
-//  START
-// ════════════════════════════════════════════
 init();
 </script>
 </body>
