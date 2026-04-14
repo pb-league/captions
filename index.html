@@ -1079,7 +1079,7 @@ async function adminDeleteUser(email){if(!confirm('Delete user '+email+'?'))retu
 // ════════════════════════════════════════
 //  PUSH NOTIFICATIONS
 // ════════════════════════════════════════
-const VAPID_PUBLIC_KEY = window.VAPID_PUBLIC_KEY || '';
+// const VAPID_PUBLIC_KEY = window.VAPID_PUBLIC_KEY || '';
 
 async function loadNotifStatus(){
   if(!('Notification' in window)||!('serviceWorker' in navigator)){
